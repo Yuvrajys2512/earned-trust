@@ -75,4 +75,5 @@ earned-trust/
 
 ## 6. Current status
 
-See the top of `docs/05_PLAN.md` — keep its "Now" line updated when you finish a round.
+**Work from `docs/09_CHECKLIST.md`** (first unchecked item; tick items as you finish them). Why: `docs/08_WINNING_PLAN.md`.
+See also the top of `docs/05_PLAN.md` — keep its "Now" line updated when you finish a round.
