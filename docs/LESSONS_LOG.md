@@ -1,5 +1,8 @@
 # Lessons log
 
+> **Clock note (added Sat 07:10 Helsinki):** the build machine runs on IST (UTC+5:30). Every timestamp above this note's date that says Helsinki was actually IST: subtract 3 h 30 min. New entries use real Helsinki time.
+
+
 Deliverable. Log every surprise, dead end and insight as it happens — short, dated, honest. Newest first.
 
 Template:

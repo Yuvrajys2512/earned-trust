@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** Round 3 done (Sat ~10:45): #2297 — 237 files → 9 human (222 snapshots byte-identical, 6 T4 outputs consistent), budget page with 2/10/60 selector, and a full review record + predict-then-reveal page (`out/2297/review.html`): BC-1 intended (net8 excluded), **BC-2 proven regression (CS0579 for hand-annotated resolvers)**, BC-3 proven gap (netstandard2.0), agent's "not available" claim refuted. Next: 2283 scope drift (optional), Round 4 quarantine demo, then Final deliverables. (Update this line after every round.)
+**Now:** Rounds 0–3 done. **Remaining work follows `docs/08_WINNING_PLAN.md`** (written Sat 07:10 Helsinki after a research pass): B1 Time Machine (replay on 1a74a620, the real unreviewed origin of #2234) → B2 AI-written spec → B3 human drill → B4 injection demo → B5 4-PR portfolio → B6 attestation; feature freeze 21:00. Note: machine clock is IST; older log times are IST. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 

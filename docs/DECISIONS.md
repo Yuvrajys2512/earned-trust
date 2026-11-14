@@ -1,9 +1,13 @@
 # Decision log
 
+> **Clock note (added Sat 07:10 Helsinki):** the build machine runs on IST (UTC+5:30). Every timestamp above this note's date that says Helsinki was actually IST: subtract 3 h 30 min. New entries use real Helsinki time.
+
+
 Format: newest first. One line of decision, one line of why. Times Helsinki.
 
 | When | Decision | Why |
 | --- | --- | --- |
+| Sat 14 Nov 07:10 (Helsinki) | Remaining rounds replaced by `docs/08_WINNING_PLAN.md`: lead with the **Time Machine** (the #2234 regression came from PR #2106, self-merged with zero reviews; replay our factory on it), add **human drills** (two-sided calibration) and a **signed attestation**; AI-written spec closes the "human-curated" gap | 25 teams will ship LLM-summary-plus-confidence; we need evidence no one else has (real repo history) and a concept no one else has (measuring the human too). Research pass: arXiv 2610.21144 / 2610.11179, Meta JiTTests Oct 2026, GhostCommit, DORA Art. 9, PLD 9 Dec 2026 |
 | Sat 14 Nov ~10:40 | A behavior change may declare `expect` (`catching` default, `broken-by-pr` for a regression, `failing-both` for a requirement gap); the record builder checks the declared verdict against the ledger and fails closed to hearsay | #2297's most important finding is a regression, which the old "every cited test must be catching" rule would have labelled hearsay. The spec says *what kind* of proof; only the ledger says whether it holds |
 | Sat 14 Nov ~10:40 | Reviewer receipts are recognised by the `Et*` test-class prefix, not a hardcoded class name; the review record embeds the attention budget (totals, human files, SHA-256 of the machine receipts) | Same pipeline for every PR; the signed record covers what was cleared without a human, not just what was asked |
 | Sat 14 Nov ~10:05 | Budget minutes are an **estimate** (changed lines ÷ 20/min, ≥0.5 min/file) and the page says so; human files are ordered src → templates → tests → docs; anything over budget is shown as *knowingly unread*, never hidden | A budget the human can't see the edges of is a hidden auto-approve. The rate is a stated assumption, not a measurement |
