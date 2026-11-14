@@ -58,7 +58,8 @@ Commits: no Claude co-author trailer (user preference).
 - [ ] Concept card v2 (`docs/03_CONCEPT.md` → one-page visual; add P8–P10)
 - [ ] Walkthrough script (from 08 §6) + dry run
 - [ ] Sleep 23:30–05:00
-- [ ] (optional) B7 trust ledger (Aiven) / B8 Modal live URL
+- [x] B7 trust ledger (Aiven): `et trust`, per-region trust in records/pages/scoreboard (L-21)
+- [ ] B8 Modal live URL
 - [ ] Demo video ≤3 min
 - [ ] Clean DECISIONS / LESSONS / FAILURE_MODES, README
 - [ ] Submit by 09:30

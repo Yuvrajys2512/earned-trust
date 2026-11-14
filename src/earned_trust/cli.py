@@ -129,6 +129,22 @@ def cmd_record(args: argparse.Namespace) -> int:
                                  + ", ".join(f"{t.split('.')[-1]} {o.outcome}" for t, o in cf.items() if "Metadata" in t or "Referenced" in t))
         record.pop("evidence_sha256", None)
         record["evidence_sha256"] = hashlib.sha256(json.dumps(record, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    tj = ROOT / "out" / "trust.json"
+    if tj.exists():   # trust ledger snapshot (Aiven): track record of the regions this PR changes
+        import hashlib
+        t = json.loads(tj.read_text(encoding="utf-8"))
+        src = [f["path"] for f in facts["files"] if f["cls"] == "src"]
+        regs = {pth: {k: t["regions"][pth][k] for k in ("state", "why", "human_question_required", "machine_clear_allowed",
+                                                       "screeners", "escapes")}
+                for pth in src if pth in t["regions"]}
+        if regs:
+            record["trust"] = {"source": t["source"], "snapshot_at": t["generated_at"], "rule": t["rule"], "regions": regs}
+            low = [pth.split("/")[-1] for pth, r in regs.items() if r["human_question_required"]]
+            record["checked"].append(f"Trust ledger ({t['source']}): " + "; ".join(
+                f"{pth.split('/')[-1]} {r['state']}" for pth, r in regs.items())
+                + (f". Human question required for: {', '.join(low)}" if low else ""))
+            record.pop("evidence_sha256", None)
+            record["evidence_sha256"] = hashlib.sha256(json.dumps(record, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     qdir = out_dir / "injection"
     if (qdir / "quarantine.json").exists():   # author text, quarantined as data; never an input to the verdict
         import hashlib
@@ -395,6 +411,8 @@ def cmd_index(args: argparse.Namespace) -> int:
             notes.append(f"{record['human_calibration']['drills']} human drill on the page (planted bug; the signature records whether it was caught)")
         if record and record.get("quarantine"):
             notes.append(f"PR description quarantined: {record['quarantine']['analysis']['verdict']}")
+        if record and record.get("trust"):
+            notes.append("Trust ledger: " + "; ".join(f"{p_.split('/')[-1]} {r['state']}" for p_, r in record["trust"]["regions"].items()))
         if record and record.get("time_machine"):
             notes.append(f"Time Machine: {record['time_machine']['verdict']} on {record['time_machine']['bad_commit']}")
         prs.append({"key": key, "requirement": facts["requirement"], "files": len(facts["files"]),
@@ -452,6 +470,12 @@ def cmd_attest(args: argparse.Namespace) -> int:
     ref = gf.resolve_branch(args.repo, pr.branch)
     head = gf.git(args.repo, "rev-parse", ref).strip()
     st = at.attest(args.pr, args.repo, head, pr.branch, Path(args.signed) if args.signed else None)
+    if args.signed:   # keep the human's signed record: the trust ledger reads drills from out/<pr>/signoffs/
+        import shutil
+        dest = ROOT / "out" / args.pr / "signoffs"
+        dest.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(args.signed, dest / Path(args.signed).name)
+        print(f"   signed record kept -> {(dest / Path(args.signed).name).relative_to(ROOT)} (run `et trust` to add its drill)")
     print(f"== attested #{args.pr}: subject {head[:12]}, predicate {at.PREDICATE_TYPE}")
     print(f"   -> {st.relative_to(ROOT)} + .sig (ssh-keygen -Y sign, namespace {at.NAMESPACE}, demo key out/attest/)")
     return cmd_verify(args)
@@ -465,6 +489,41 @@ def cmd_verify(args: argparse.Namespace) -> int:
         print(f"   [{'ok' if c['ok'] else 'FAIL'}] {c['check']}: {c['detail'][:140]}")
     print(f"== verify #{args.pr}: {'VALID' if res['ok'] else 'INVALID'}")
     return 0 if res["ok"] else 1
+
+
+def cmd_trust(args: argparse.Namespace) -> int:
+    from . import trust as tr
+    events = tr.collect_events()
+    regions, records = set(), []
+    for key in PRS:
+        d = ROOT / "out" / key
+        if (d / "facts.json").exists():
+            regions |= {f["path"] for f in json.loads((d / "facts.json").read_text(encoding="utf-8"))["files"] if f["cls"] == "src"}
+        if (d / "record.json").exists():
+            st = d / "attestation" / "statement.json"
+            records.append((json.loads((d / "record.json").read_text(encoding="utf-8")),
+                            json.loads(st.read_text(encoding="utf-8")) if st.exists() else None))
+    source = "local evidence (database not used)"
+    n_rec = None
+    if not args.local:
+        try:
+            events, n_rec = tr.sync(events, records)
+            source = tr.db_label()
+        except Exception as e:   # unreachable DB: say so, compute from local evidence
+            print(f"   database unavailable ({type(e).__name__}: {str(e)[:120]}); computing from local evidence", file=sys.stderr)
+    ledger = tr.compute(events, sorted(regions))
+    snap = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "source": source,
+            "records_stored": n_rec, "events": len(events),
+            "rule": f"withdrawn after an escape until {tr.RESTORE_AFTER} later calibrated reviews catch every planted bug "
+                    f"(tests >= {int(tr.TESTS_MIN * 100)}%); unknown = no track record = low trust",
+            "regions": ledger, "event_rows": events}
+    (ROOT / "out" / "trust.json").write_text(json.dumps(snap, indent=2, default=str), encoding="utf-8")
+    print(f"== trust ledger: {len(events)} events, {n_rec if n_rec is not None else '-'} records, source: {source}")
+    for region, r in ledger.items():
+        sc = ", ".join(f"{k} {v['caught']}/{v['caught'] + v['missed']}" for k, v in r["screeners"].items())
+        print(f"   {r['state']:<9} {region.split('/')[-1]:<34} {sc[:110]}")
+    print("   -> out/trust.json")
+    return 0
 
 
 TIME_MACHINE = {"2234": {"pr": 2106, "issue": 2234, "bad": "1a74a620"}}
@@ -524,6 +583,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--runs", type=int, default=1, help="independent runs (models are stochastic)")
     p.add_argument("--prompt", default="v2", help="prompt version (see spec.PROMPTS)")
     p.set_defaults(func=cmd_spec)
+    p = sub.add_parser("trust", help="trust ledger: sync evidence events to Postgres (Aiven), compute per-region trust")
+    p.add_argument("--local", action="store_true", help="don't use the database")
+    p.set_defaults(func=cmd_trust)
     p = sub.add_parser("attest", help="sign the review record as an in-toto Statement (ssh-keygen -Y sign)")
     p.add_argument("pr", choices=list(PRS))
     p.add_argument("--signed", help="signed record downloaded from the review page (adds the human sign-off)")

@@ -165,6 +165,7 @@ function render(){
   // --- calibration
   app.append($(`<h2>How far to trust the AI reviewer</h2>`));
   app.append(calibrationCard(R.calibration));
+  if(R.trust) app.append(trustCard(R.trust));
 
   app.append(signPanel());
 }
@@ -180,6 +181,18 @@ function quarantineCard(Q){
     ${n?`<p style="margin:14px 0 6px"><b>Why it matters: a naive pipeline that gives the PR text to the reviewer.</b> Same model (${esc(n.model||'')}), same planted bugs (${n.mutants.map(esc).join(', ')}, each ${n.reps}×), only the PR text differs:</p>
     <table><thead><tr><th>Reviewer input</th><th>Planted bugs caught</th><th>Findings</th></tr></thead><tbody>${nrows}</tbody></table>`:''}
   </div>`);
+}
+
+function trustCard(T){
+  const statePill = st => ({withdrawn:'<span class="pill p-bad">trust withdrawn</span>', unknown:'<span class="pill p-warn">no track record</span>',
+                            measured:'<span class="pill p-ok">measured</span>'}[st]||esc(st));
+  const rows = Object.entries(T.regions).map(([path,r])=>{
+    const sc = Object.entries(r.screeners).map(([k,v])=>`${esc(k)} <b>${v.caught}/${v.caught+v.missed}</b>`).join(' · ');
+    return `<tr><td class="mono">${esc(path.split('/').pop())}</td><td>${statePill(r.state)}${r.human_question_required?'<div class="muted" style="font-size:12px;margin-top:4px">human question required; no machine clearing</div>':''}</td>
+      <td>${esc(r.why)}${sc?`<div class="muted" style="margin-top:4px">${sc}</div>`:''}</td></tr>`; }).join('');
+  return $(`<div class="card"><div class="row"><b>Track record of the code this PR changes</b> <span class="muted">(trust ledger · ${esc(T.source)})</span></div>
+    <p class="muted" style="margin:6px 0">Trust is earned per region from executed evidence across reviews, and withdrawn after an escape. Rule: ${esc(T.rule)}.</p>
+    <table><thead><tr><th>Region</th><th>State</th><th>Why (evidence)</th></tr></thead><tbody>${rows}</tbody></table></div>`);
 }
 
 function timeMachineCard(tm){

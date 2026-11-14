@@ -46,5 +46,6 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | F-40 | Scoreboard metric inflated by counting pre-existing tests as "agent tests" (22/31 placebo instead of 6/15) | seen (by us), fixed before publishing | `et index` | Count only test methods the PR adds (from the diff) |
 | F-41 | Prompt injection in author text silences a real finding (AI reviewer returns `{"findings": []}` as told) | seen (Gemma, naive pipeline, 2/3 on M06) | L-20 | Never give author text to the reviewer; quarantine it for the human; verdict from executed tests |
 | F-42 | Invisible payloads (HTML comment, Unicode tag chars) make the PR description a human sees differ from what a model reads | seen (our sample) | L-20 | Quarantine decodes and shows hidden text; render "what the model would read" next to "what you see" |
+| F-43 | Trust treated as permanent or restored by elapsed time; or "no data" shown as safe | design risk (avoided) | L-21 | Ledger rule: escape withdraws trust until later calibrated reviews earn it back; unknown = low trust |
 
 Add rows as the build surfaces new ones (especially failures of *our own* reviewer).
