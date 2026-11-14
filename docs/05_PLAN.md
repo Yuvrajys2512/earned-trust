@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** Submission text drafted in `docs/11_SUBMISSION.md` (Sat ~18:50 Helsinki); needs repo link + video link. Next: sleep 23:30–05:00; Sunday record the video from `docs/10_WALKTHROUGH.md`, fill links, submit by 09:30. (Update this line after every round.)
+**Now:** UI pass done and live (Sat ~20:05 Helsinki): shared FX layer (receipt machine, reveal stamps, time-machine rewind, planted-bug grid, 237→9 triage, printed receipt), phone-width fixed, attestations still VALID (L-25, F-45). Submission text drafted (`docs/11_SUBMISSION.md`, needs repo + video links). Next: sleep 23:30–05:00; Sunday record the video from `docs/10_WALKTHROUGH.md`, submit by 09:30. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 

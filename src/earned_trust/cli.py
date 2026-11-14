@@ -179,7 +179,7 @@ def cmd_record(args: argparse.Namespace) -> int:
         body = json.dumps(record, sort_keys=True, separators=(",", ":")).encode()
         record["evidence_sha256"] = hashlib.sha256(body).hexdigest()
     (dest / "record.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
-    tpl = (Path(__file__).parent / "ui" / "review.html").read_text(encoding="utf-8")
+    tpl = ui_template("review.html")
     embedded = json.dumps(record).replace("</", "<\\/")
     (dest / "review.html").write_text(tpl.replace("/*RECORD_JSON*/", embedded), encoding="utf-8")
     print(f"== record {pr.requirement.id}: {len(record['behavior_changes'])} behavior changes "
@@ -190,6 +190,15 @@ def cmd_record(args: argparse.Namespace) -> int:
     print(f"   evidence_sha256 {record['evidence_sha256']}")
     print(f"   -> {(dest / 'record.json').relative_to(ROOT)}, {(dest / 'review.html').relative_to(ROOT)}")
     return 0
+
+
+def ui_template(name: str) -> str:
+    """Load a UI template with the shared FX layer (fx.css / fx.js) inlined, so every page stays one self-contained file."""
+    ui = Path(__file__).parent / "ui"
+    tpl = (ui / name).read_text(encoding="utf-8")
+    css = (ui / "fx.css").read_text(encoding="utf-8").replace("</", "<\\/")
+    js = (ui / "fx.js").read_text(encoding="utf-8").replace("</script", "<\\/script")
+    return tpl.replace("/*FX_CSS*/", css, 1).replace("/*FX_JS*/", js, 1)
 
 
 def cmd_calibrate(args: argparse.Namespace) -> int:
@@ -268,7 +277,7 @@ def cmd_budget(args: argparse.Namespace) -> int:
     result["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     out = out_dir / "budget.json"
     out.write_text(json.dumps(result, indent=2), encoding="utf-8")
-    tpl = (Path(__file__).parent / "ui" / "budget.html").read_text(encoding="utf-8")
+    tpl = ui_template("budget.html")
     (out_dir / "budget.html").write_text(tpl.replace("/*BUDGET_JSON*/", json.dumps(result).replace("</", "<\\/")), encoding="utf-8")
     t = result["totals"]
     print(f"== budget {pr.requirement.id}: {t['files']} files -> {t['machine_cleared']} machine-cleared, {t['human']} human")
@@ -451,10 +460,10 @@ def cmd_index(args: argparse.Namespace) -> int:
                        ", ".join(f"{k}: {v['caught']}/{v['measured']}" for k, v in nv["summary"].items())])
     data = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="minutes"), "prs": prs, "method": method}
     (ROOT / "out" / "index.json").write_text(json.dumps(data, indent=2), encoding="utf-8")
-    tpl = (Path(__file__).parent / "ui" / "index.html").read_text(encoding="utf-8")
+    tpl = ui_template("index.html")
     (ROOT / "out" / "index.html").write_text(tpl.replace("/*INDEX_JSON*/", json.dumps(data).replace("</", "<\\/")), encoding="utf-8")
     import shutil
-    shutil.copyfile(Path(__file__).parent / "ui" / "card.html", ROOT / "out" / "card.html")  # static concept card
+    (ROOT / "out" / "card.html").write_text(ui_template("card.html"), encoding="utf-8")  # static concept card
     for p in prs:
         print(f"   #{p['key']} [{p['status']}] {p['headline'][:100]}")
     for m in method:

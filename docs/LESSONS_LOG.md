@@ -30,6 +30,7 @@ Deliverable. Log every surprise, dead end and insight as it happens — short, d
 - L-22 Live: the receipts are a URL anyone can check
 - L-23 Our own page over-claimed: pre-existing tests counted as the agent's placebos
 - L-24 Dry run on the live URL; a deploy isn't live the second it says so
+- L-25 A count-up animation can lie in a freeze-frame (UI pass)
 
 ---
 
@@ -43,6 +44,12 @@ Evidence: <command / file / link>
 ```
 
 ---
+
+### L-25 — A count-up animation can lie in a freeze-frame (Sat 14 Nov ~20:00 Helsinki, UI pass)
+What happened: we added a presentation layer (`ui/fx.css`, `ui/fx.js`, inlined into every page by `ui_template`): a test-replay "receipt machine", predict/reveal stamps, a Time Machine timeline, a planted-bug matrix, a 237 → 9 file triage, and a printed receipt on signing. The first render check caught the stat "6 / 10" mid count-up reading **"5 / 8"**, and "3 questions" for 4. A video frame or a screenshot of that is a false number on our own page. Two more surprises: headless Edge `--virtual-time-budget` doesn't play animations faithfully (and drops `?query`/`#hash` on file URLs), so we checked in real Chrome over a local server; and at 390 px width the review pages already scrolled sideways (story/trust tables, `.two` lists) before this pass.
+What we learned: animation is a claim too. Only values with a single number count up; fractions and ranges render final from the first frame. Every animated value ends on the exact text the page rendered; the layer reads the embedded record and changes nothing in it (records, hashes and attestations untouched: `et verify` VALID ×3 after the change).
+What changed: count-up limited to single-number values; `#still` mode (and `prefers-reduced-motion`) renders final states; phone-width wrapping rules; `scripts/render_pages.py` re-renders pages from existing JSON without regenerating records.
+Evidence: `uv run et verify 2234|2297|2283` → VALID; overflow probe at 390 px: `documentElement.scrollWidth` 658 → 370 on `2234/review.html`.
 
 ### L-24 — Dry run on the live URL: every scripted number is on screen; a deploy isn't live the second it says so (Sat 14 Nov 16:43 Helsinki)
 What happened: for each step of `docs/10_WALKTHROUGH.md` we rendered the live page (headless Edge) and grep'd for every number and label the script says aloud (40+ strings across 5 pages). First pass, right after `modal deploy` printed success: the new `card.html` was 404 and #2283 still showed the old 16 / 19. About 20 s later the new build was served; all strings then matched, and a statement downloaded from the live site verified with stock `ssh-keygen`.

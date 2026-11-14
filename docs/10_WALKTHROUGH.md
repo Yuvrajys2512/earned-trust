@@ -14,6 +14,16 @@ Before recording: open each URL below in its own tab, in this order. Use a fresh
 | 5 | `B/card.html` |
 | 6 | `B/` (scoreboard) |
 
+
+**New visuals (UI pass, L-25): use them in the video.** Dark theme is the default (keep it for every tab).
+- Step 2–3, `B/2234/review.html`: the hero reads "AI reviewer: 0 issues. Receipts: 3 proven behavior changes, 2 refusals." Scroll slowly to **Receipt machine**: it replays the executed base/head run and stamps 6 tiles PLACEBO and 4 CATCHING, then "6 of 10 of the agent's tests pass on the old code too". It replays when scrolled into view; use **↻ replay** for a second take.
+- Step 3, Q2 reveal: locking shows the hash scrambling then sealing, then a red **MISMATCH · this is the review** stamp with a shake. Q3 (live variant) ends in an amber **DRILL · CAUGHT** stamp.
+- Step 4, Time Machine: a probe rewinds along the timeline (now → 2025-10-17 → 2024-12-26, "10 months unnoticed") and lands with "2 GO RED". Use **↻ rewind** to repeat.
+- Step 5, `B/2297/budget.html`: the 237-tile grid clears 222 + 6 tiles and leaves **9 glowing amber**; the counter runs 237 → 9. **↻ replay** repeats it.
+- Step 6: calibration bars (tests 6/10, gemma 9/10, together 10/10) and a 10-cell planted-bug grid; amber borders = only one screener caught it.
+- Live variant step 6: signing prints a **thermal receipt** with the record's numbers and a barcode of the record sha256.
+- Freeze-frames are safe: only single numbers count up; fractions are final from the first frame (F-45). Append `#still` to any URL to skip animations.
+
 ---
 
 ## A. The 3-minute video

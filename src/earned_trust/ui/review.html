@@ -79,6 +79,7 @@ ul.tight{margin:6px 0;padding-left:20px} ul.tight li{margin:3px 0}
 .quote{border-left:3px solid var(--line);padding-left:10px;font-style:italic;color:var(--muted)}
 .theme{background:transparent;color:var(--muted);border:1px solid var(--line);padding:4px 8px;font-size:12px}
 </style>
+<style>/*FX_CSS*/</style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
@@ -396,5 +397,6 @@ async function doSign(){
 function toggleTheme(){ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark?'light':'dark'; }
 render();
 </script>
+<script>/*FX_JS*/</script>
 </body>
 </html>

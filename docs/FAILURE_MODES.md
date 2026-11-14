@@ -48,5 +48,6 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | F-42 | Invisible payloads (HTML comment, Unicode tag chars) make the PR description a human sees differ from what a model reads | seen (our sample) | L-20 | Quarantine decodes and shows hidden text; render "what the model would read" next to "what you see" |
 | F-43 | Trust treated as permanent or restored by elapsed time; or "no data" shown as safe | design risk (avoided) | L-21 | Ledger rule: escape withdraws trust until later calibrated reviews earn it back; unknown = low trust |
 | F-44 | The reviewer's own report mislabels a correct measurement (pre-existing tests counted as the agent's placebos: #2283 showed 16/19, true 0/3) | seen (in our pipeline) | L-23, `out/2283/record.json` | Denominators come from a git fact (tests the PR adds); pre-existing tests reported separately; cross-check page numbers against the scoreboard in the dry run |
+| F-45 | Presentation shows a false intermediate number (count-up froze at "5 / 8" for 6 / 10) | seen (in our UI, caught before deploy) | L-25 | Animate only single-number values; final text identical to the rendered value; `#still` / reduced-motion render final states |
 
 Add rows as the build surfaces new ones (especially failures of *our own* reviewer).
