@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** B2–B8 all done (Sat ~15:10 Helsinki). B7: trust ledger on Aiven, TypeCollector.cs withdrawn after the 1a74a620 escape (L-21). B8: live at https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run (L-22). Next: deliverables (concept card v2, walkthrough script, dry run), then video Sunday. (Update this line after every round.)
+**Now:** B2–B8 all done (Sat 15:02 Helsinki). B7: trust ledger on Aiven, TypeCollector.cs withdrawn after the 1a74a620 escape (L-21). B8: live at https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run (L-22). Next: deliverables (concept card v2, walkthrough script, dry run), then video Sunday. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 
