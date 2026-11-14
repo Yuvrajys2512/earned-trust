@@ -3,6 +3,8 @@
 > **Paste this to the next Claude session:**
 > *"Read `HANDOFF.md` in `D:\earned-trust` and start on task 1 in section 4. Follow the rules in section 2. Don't re-run the pipeline unless a task says so."*
 
+> **Update Sat 14 Nov 16:45 Helsinki:** tasks 1–5 in §4 are **done** (commits `ecbca69`…`0f1bc20`): concept card v2 + live `card.html`, README, `docs/10_WALKTHROUGH.md`, live dry run (L-24), log index. Found and fixed a live over-claim: #2283 now shows 0 / 3 agent placebos, not 16 / 19 (L-23, F-44); records + attestations rebuilt, all VALID, redeployed. **Next: task 6 (sleep), then task 7 (video + submission).**
+
 Written **Sat 14 Nov 16:35 Helsinki**. The machine clock is **IST = Helsinki + 3 h 30 min**: run `date`, subtract 3:30, and use Helsinki time in every log.
 **Deadline: submit by Sun 15 Nov 09:30 Helsinki (hard 10:00).** Sleep 23:30–05:00 (solo team; non-negotiable).
 
