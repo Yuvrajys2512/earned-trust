@@ -71,7 +71,7 @@ A concept + working reference implementation for Tietoevry's challenge "Earned T
 ```bash
 cd /d/earned-trust && source scripts/env.sh && export MSGPACK_REPO=D:/msgpack PYTHONIOENCODING=utf-8
 # Rebuild pages after editing a spec/UI (no dotnet needed; uses existing out/ evidence):
-uv run et trust && for p in 2234 2297 2283; do uv run et record $p; uv run et attest $p; done && uv run et index
+uv run et trust && uv run et tier all && uv run et budget 2297 && uv run et budget 2129 && for p in 2234 2297 2283; do uv run et record $p; uv run et attest $p; done && uv run et index
 uv run et record 2234 --spec ai && uv run et record 2297 --spec ai      # AI-spec pages (out/<pr>/ai/)
 # Publish (allowlist + secret scan, then Modal):
 uv run et site && uv run modal deploy deploy/modal_app.py
