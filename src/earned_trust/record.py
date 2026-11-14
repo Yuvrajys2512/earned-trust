@@ -98,7 +98,10 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
     for c in spec.get("story_claims", []):
         ev = [_ev(tests[t]) for t in c.get("tests", []) if t in tests]
         verdict = c["verdict"]
-        if c.get("tests") and verdict == "true-but-not-new":
+        if any(t not in tests for t in c.get("tests", [])):
+            verdict = "unverified"   # cites a test the ledger never ran (e.g. a model-invented name)
+            hearsay.append(f"story claim '{c.get('quote', '')[:60]}' cites tests not in the ledger; shown as unverified.")
+        elif c.get("tests") and verdict == "true-but-not-new":
             # recompute: only allowed if the cited tests really pass on base
             if not ev or not all(e["verdict"] == "placebo" for e in ev):
                 verdict = "unverified"
@@ -151,8 +154,10 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
         "base": facts["base"],
         "head": facts["head"],
         "author": {"type": "ai-agent", "label": "author agent (identity hidden from the reviewer)"},
-        "reviewer": {"spec_author": spec["spec_author"], "model": None,
-                     "note": "v0: no model in the loop yet; all verdicts come from executed tests"},
+        "reviewer": {"spec_author": spec["spec_author"], "model": spec.get("model"),
+                     "note": ("spec written by the reviewer model from requirement + diff + ledger (never PR text); "
+                              "every cited test re-checked against the ledger") if spec.get("model") else
+                             "v0: human-curated spec; all verdicts come from executed tests"},
         "toolchain": ledger.get("toolchain", {"sdk": "9.0.x (global.json overridden, L-04)"}),
         "blind_intent": spec["blind_intent"],
         "files": facts["files"],

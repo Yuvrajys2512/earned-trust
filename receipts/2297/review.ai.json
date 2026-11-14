@@ -1,0 +1,148 @@
+{
+  "blind_intent": "Generated formatters/resolvers should be excluded from code coverage.",
+  "behavior_changes": [
+    {
+      "id": "BC-1",
+      "title": "Generated types are decorated with [ExcludeFromCodeCoverage] on supported platforms",
+      "requirement_link": "intended",
+      "link_why": "The requirement explicitly asks for generated formatters/resolvers to be excluded from code coverage.",
+      "tests": [
+        "CodeCoverageExclusionTests.AllGeneratedTypesAreExcludedFromCodeCoverage",
+        "CodeCoverageExclusionTests.ExcludeAttributeIsGuardedForTargetsWhereItIsUnavailable",
+        "EtCoverageReceiptsTests.Net80_GeneratedResolver_IsExcludedFromCoverage"
+      ],
+      "expect": "catching",
+      "question": {
+        "context": "[GeneratedMessagePackResolver]\npartial class MyResolver {}",
+        "prompt": "What attribute is present on the generated MyResolver class when targeting .NET 8?",
+        "options": [
+          {
+            "id": "a",
+            "text": "No attributes are present"
+          },
+          {
+            "id": "b",
+            "text": "[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]"
+          },
+          {
+            "id": "c",
+            "text": "[MessagePack.GeneratedMessagePackResolverAttribute]"
+          }
+        ],
+        "revealed": "b",
+        "reveal_text": "The tests show that generated files now contain the ExcludeFromCodeCoverage attribute on .NET 8."
+      }
+    },
+    {
+      "id": "BC-2",
+      "title": "Regression in compilation of user-excluded resolvers",
+      "requirement_link": "unexplained",
+      "link_why": "The requirement does not mention user-defined resolvers or compilation regressions.",
+      "tests": [
+        "EtCoverageReceiptsTests.UserExcludedResolver_StillCompiles"
+      ],
+      "expect": "broken-by-pr",
+      "question": {
+        "context": "// A user-defined resolver that was previously compiling\npublic class UserResolver : IFormatterResolver { ... }",
+        "prompt": "Does the code in EtCoverageReceiptsTests.UserExcludedResolver_StillCompiles compile after the PR?",
+        "options": [
+          {
+            "id": "a",
+            "text": "Yes"
+          },
+          {
+            "id": "b",
+            "text": "No"
+          }
+        ],
+        "revealed": "b",
+        "reveal_text": "The ledger shows this test passed on base but fails on head."
+      }
+    },
+    {
+      "id": "BC-3",
+      "title": "Generated resolvers on .NET Standard 2.0 remain included in code coverage",
+      "requirement_link": "intended",
+      "link_why": "The requirement asks for generated code to be excluded, but this target remains uncovered.",
+      "tests": [
+        "EtCoverageReceiptsTests.NetStandard20_GeneratedResolver_IsExcludedFromCoverage"
+      ],
+      "expect": "failing-both",
+      "question": {
+        "context": "[GeneratedMessagePackResolver]\npartial class MyResolver {}",
+        "prompt": "Is the generated MyResolver class decorated with [ExcludeFromCodeCoverage] when targeting .NET Standard 2.0?",
+        "options": [
+          {
+            "id": "a",
+            "text": "Yes"
+          },
+          {
+            "id": "b",
+            "text": "No"
+          }
+        ],
+        "revealed": "b",
+        "reveal_text": "The ledger shows this test failed on both base and head, indicating the gap persists."
+      }
+    }
+  ],
+  "refusals": [
+    {
+      "id": "R-1",
+      "topic": "Whether the exclusion should apply to .NET Standard 2.0/Framework",
+      "decision": "I won't decide this.",
+      "why": "There is a contradiction between the author's claim that the attribute is unavailable and a placebo test suggesting it is available. Determining if the guard is a correct policy decision requires human intervention.",
+      "evidence": [
+        "BC-3",
+        "EtCoverageReceiptsTests.Story_AttributeIsAvailableOnNetStandard20AndNetFramework"
+      ]
+    }
+  ],
+  "story_claims": [
+    {
+      "source": "test name (diff only)",
+      "quote": "The attribute is not available on netstandard2.0 or .NET Framework, so it is only emitted where it exists.",
+      "claim": "The [ExcludeFromCodeCoverage] attribute is unavailable on .NET Standard 2.0 and .NET Framework.",
+      "tests": [
+        "EtCoverageReceiptsTests.Story_AttributeIsAvailableOnNetStandard20AndNetFramework"
+      ],
+      "verdict": "misleading",
+      "why": "The placebo test 'Story_AttributeIsAvailableOnNetStandard20AndNetFramework' passed on both base and head, implying the attribute is indeed available on those platforms."
+    }
+  ],
+  "not_checked": [
+    "The specific cause of the compilation failure in EtCoverageReceiptsTests.UserExcludedResolver_StillCompiles"
+  ],
+  "_about": "Reviewer spec written by a model (B2). Inputs: requirement + diff of human-lane files + executed ledger; never PR text, commit messages or docs. Claims only: `et record --spec ai` checks every cited test against the ledger and downgrades mismatches to hearsay.",
+  "spec_author": "reviewer model gemma-4-31b-it (google-gemma), prompt v3",
+  "model": {
+    "id": "gemma-4-31b-it",
+    "family": "google-gemma",
+    "prompt_version": "v3",
+    "generated_at": "2026-11-14T12:21:45+00:00",
+    "input": {
+      "diff_files": [
+        "src/MessagePack.SourceGenerator/Transforms/TransformUtilities.cs",
+        "src/MessagePack.SourceGenerator/Transforms/ResolverTemplate.tt",
+        "src/MessagePack.SourceGenerator/Transforms/CompositeResolverTemplate.tt",
+        "src/MessagePack.SourceGenerator/Transforms/EnumTemplate.tt",
+        "src/MessagePack.SourceGenerator/Transforms/FormatterTemplate.tt",
+        "src/MessagePack.SourceGenerator/Transforms/StringKey/StringKeyFormatterTemplate.tt",
+        "src/MessagePack.SourceGenerator/Transforms/UnionTemplate.tt",
+        "tests/MessagePack.SourceGenerator.Tests/CodeCoverageExclusionTests.cs"
+      ],
+      "withheld_files_count": 229,
+      "withheld_classes": [
+        "doc",
+        "generated",
+        "template-output"
+      ],
+      "ledger_entries": 6,
+      "user_prompt_chars": 15826,
+      "pr_text_seen": false,
+      "git_facts_included": false
+    },
+    "selected_run": "gemma-v3-2",
+    "runs": 3
+  }
+}

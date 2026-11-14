@@ -1,0 +1,123 @@
+{
+  "blind_intent": "The analyzer must report diagnostics for types marked SuppressSourceGeneration = true. It must not stop reporting diagnostics for these types.",
+  "behavior_changes": [
+    {
+      "id": "BC-1",
+      "title": "MessagePack.SourceGenerator no longer crashes on duplicate or mixed keys",
+      "requirement_link": "unexplained",
+      "link_why": "The requirement concerns the reporting of diagnostics for suppressed types, not generator crashes on duplicate keys.",
+      "tests": [
+        "EtGeneratorReceiptsTests.Generator_DuplicateIntKeys_DoesNotThrow",
+        "EtGeneratorReceiptsTests.Generator_DuplicateIntKeys_SerializesFirstMemberOnly",
+        "EtGeneratorReceiptsTests.Generator_DuplicateStringKeys_SerializesFirstMemberOnly",
+        "EtGeneratorReceiptsTests.Generator_MixedKeys_SkipsMismatchedMember"
+      ],
+      "expect": "catching",
+      "question": {
+        "context": "[MessagePackObject]\npublic class Foo {\n    [Key(0)] public int A { get; set; }\n    [Key(0)] public int B { get; set; }\n}",
+        "prompt": "What happens when the source generator processes this class after the PR?",
+        "options": [
+          {
+            "id": "a",
+            "text": "It crashes with an ArgumentException"
+          },
+          {
+            "id": "b",
+            "text": "It generates a formatter that includes both members"
+          },
+          {
+            "id": "c",
+            "text": "It generates a formatter for the first member only"
+          }
+        ],
+        "revealed": "c",
+        "reveal_text": "The ledger shows the generator crashed on base but now passes tests verifying it serializes only the first member when keys are duplicated."
+      }
+    },
+    {
+      "id": "BC-2",
+      "title": "MsgPack00xMessagePackAnalyzer no longer crashes and reports diagnostics on duplicate or mixed keys",
+      "requirement_link": "unexplained",
+      "link_why": "While these tests use SuppressSourceGeneration = true, the requirement is about a specific regression (v3.1.0 -> v3.1.1) which Git Facts prove is not in this history.",
+      "tests": [
+        "SuppressSourceGenerationAnalyzerTests.DuplicateIntKeysAreReportedWithoutAnalyzerFailure",
+        "SuppressSourceGenerationAnalyzerTests.DuplicateKeysAreReportedWithoutAnalyzerFailureForGeneratedTypes",
+        "SuppressSourceGenerationAnalyzerTests.DuplicateStringKeysAreReportedWithoutAnalyzerFailure",
+        "SuppressSourceGenerationAnalyzerTests.MixedKeyKindsAreReportedWithoutAnalyzerFailure"
+      ],
+      "expect": "catching",
+      "question": {
+        "context": "[MessagePackObject(SuppressSourceGeneration = true)]\npublic class Foo {\n    [Key(0)] public int A { get; set; }\n    [Key(0)] public int B { get; set; }\n}",
+        "prompt": "What is the result of running the analyzer on this code after the PR?",
+        "options": [
+          {
+            "id": "a",
+            "text": "The analyzer crashes"
+          },
+          {
+            "id": "b",
+            "text": "A diagnostic (MsgPack005) is reported"
+          },
+          {
+            "id": "c",
+            "text": "No diagnostics are reported"
+          }
+        ],
+        "revealed": "b",
+        "reveal_text": "The ledger shows the analyzer crashed on base but now passes tests verifying that duplicate keys are reported as diagnostics."
+      }
+    }
+  ],
+  "refusals": [
+    {
+      "id": "R-1",
+      "topic": "Whether the reported regression (v3.1.0 -> v3.1.1) is fixed",
+      "decision": "I won't decide this.",
+      "why": "Git Facts explicitly state that the reported regression and the commits between the affected versions are not in the history of the base commit; therefore, this PR cannot be fixing the reported cause.",
+      "evidence": [
+        "BC-2"
+      ]
+    }
+  ],
+  "story_claims": [
+    {
+      "source": "test name (diff only)",
+      "quote": "Verifies that the analyzer keeps validating [MessagePackObject(SuppressSourceGeneration = true)] types",
+      "claim": "The analyzer should continue to validate types even when source generation is suppressed because they are still serialized at run time.",
+      "tests": [
+        "SuppressSourceGenerationAnalyzerTests.MemberWithoutKeyIsReported"
+      ],
+      "verdict": "supported",
+      "why": "The placebo test proves that a member without a key is still reported as a diagnostic for a suppressed type."
+    }
+  ],
+  "not_checked": [
+    "Whether the addition of 'continue' in TypeCollector.cs suppresses other intended diagnostics when keys are mixed.",
+    "Whether the use of ContainsKey before Add in TypeCollector.cs impacts performance for very large types."
+  ],
+  "_about": "Reviewer spec written by a model (B2). Inputs: requirement + diff of human-lane files + executed ledger; never PR text, commit messages or docs. Claims only: `et record --spec ai` checks every cited test against the ledger and downgrades mismatches to hearsay.",
+  "spec_author": "reviewer model gemma-4-31b-it (google-gemma), prompt v3",
+  "model": {
+    "id": "gemma-4-31b-it",
+    "family": "google-gemma",
+    "prompt_version": "v3",
+    "generated_at": "2026-11-14T12:02:21+00:00",
+    "input": {
+      "diff_files": [
+        "src/MessagePack.SourceGenerator/CodeAnalysis/TypeCollector.cs",
+        "tests/MessagePack.SourceGenerator.ExecutionTests/SuppressedSourceGenerationTests.cs",
+        "tests/MessagePack.SourceGenerator.Tests/SuppressSourceGenerationAnalyzerTests.cs"
+      ],
+      "withheld_files_count": 1,
+      "withheld_classes": [
+        "doc"
+      ],
+      "ledger_entries": 14,
+      "user_prompt_chars": 17791,
+      "pr_text_seen": false,
+      "git_facts_included": true
+    },
+    "selected_run": "gemma-v3-1",
+    "runs": 3
+  }
+}

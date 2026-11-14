@@ -7,7 +7,9 @@
     uv run et calibrate 2234 --tests            # planted bugs vs the test suite (local dotnet)
     uv run et calibrate 2234 --reviewer gemma   # planted bugs vs the AI reviewer
     uv run et timemachine 2234      # replay on the commit that caused the bug (scripts/timemachine_2234.sh first)
-    uv run et budget 2297           # machine-cleared vs human files (needs scripts/regen_2297.sh first)
+    uv run et spec 2297 --reviewer gemma --runs 3   # B2: the model writes the review spec
+    uv run et record 2297 --spec ai                 # same hearsay guard -> out/2297/ai/
+    uv run et budget 2297          # machine-cleared vs human files (needs scripts/regen_2297.sh first)
 """
 from __future__ import annotations
 
@@ -92,7 +94,10 @@ def cmd_record(args: argparse.Namespace) -> int:
     out_dir = ROOT / "out" / args.pr
     facts = json.loads((out_dir / "facts.json").read_text(encoding="utf-8"))
     ledger = json.loads((out_dir / "ledger.json").read_text(encoding="utf-8"))
-    spec = json.loads((ROOT / "receipts" / args.pr / "review.json").read_text(encoding="utf-8"))
+    spec_name = "review.json" if args.spec == "human" else "review.ai.json"
+    spec = json.loads((ROOT / "receipts" / args.pr / spec_name).read_text(encoding="utf-8"))
+    dest = out_dir if args.spec == "human" else out_dir / "ai"   # the AI-spec record never overwrites the human one
+    dest.mkdir(parents=True, exist_ok=True)
     run_log = ROOT / "out" / f"verify_{args.pr}_run.log"
     if run_log.exists():
         m = re.search(r"SDK (\d+\.\d+\.\d+)", run_log.read_text(encoding="utf-8", errors="replace"))
@@ -113,15 +118,17 @@ def cmd_record(args: argparse.Namespace) -> int:
         record.pop("evidence_sha256", None)
         body = json.dumps(record, sort_keys=True, separators=(",", ":")).encode()
         record["evidence_sha256"] = hashlib.sha256(body).hexdigest()
-    (out_dir / "record.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
+    (dest / "record.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
     tpl = (Path(__file__).parent / "ui" / "review.html").read_text(encoding="utf-8")
     embedded = json.dumps(record).replace("</", "<\\/")
-    (out_dir / "review.html").write_text(tpl.replace("/*RECORD_JSON*/", embedded), encoding="utf-8")
+    (dest / "review.html").write_text(tpl.replace("/*RECORD_JSON*/", embedded), encoding="utf-8")
     print(f"== record {pr.requirement.id}: {len(record['behavior_changes'])} behavior changes "
           f"({sum(b['status'] == 'proven' for b in record['behavior_changes'])} proven), "
           f"{len(record['refusals'])} refusals, {len(record['hearsay'])} hearsay")
+    for h in record["hearsay"]:
+        print(f"   hearsay: {h}")
     print(f"   evidence_sha256 {record['evidence_sha256']}")
-    print(f"   -> {(out_dir / 'record.json').relative_to(ROOT)}, {(out_dir / 'review.html').relative_to(ROOT)}")
+    print(f"   -> {(dest / 'record.json').relative_to(ROOT)}, {(dest / 'review.html').relative_to(ROOT)}")
     return 0
 
 
@@ -214,6 +221,75 @@ def cmd_budget(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_spec(args: argparse.Namespace) -> int:
+    from . import spec as sp
+    pr = PRS[args.pr]
+    out_dir = ROOT / "out" / args.pr
+    facts = json.loads((out_dir / "facts.json").read_text(encoding="utf-8"))
+    ledger = json.loads((out_dir / "ledger.json").read_text(encoding="utf-8"))
+    bud_path = out_dir / "budget.json"
+    budget = json.loads(bud_path.read_text(encoding="utf-8")) if bud_path.exists() else None
+    human = json.loads((ROOT / "receipts" / args.pr / "review.json").read_text(encoding="utf-8"))
+    head_ref = gf.resolve_branch(args.repo, pr.branch)
+    raw_dir = out_dir / "spec"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    print(f"== spec {pr.requirement.id}: reviewer {args.reviewer}, prompt {args.prompt}, {args.runs} run(s)")
+    runs, best = [], None
+    for i in range(1, args.runs + 1):
+        tag = f"{args.reviewer}-{args.prompt}-{i}"
+        try:
+            spec, raw = sp.generate(pr, args.repo, head_ref, facts, ledger, budget, args.reviewer, args.prompt)
+        except Exception as e:   # no answer / no JSON is "unknown", recorded as such, never "clean"
+            (raw_dir / f"{tag}.error.txt").write_text(f"{type(e).__name__}: {e}", encoding="utf-8")
+            print(f"   run {i}: no spec ({type(e).__name__}: {str(e)[:200]})")
+            runs.append({"run": tag, "error": f"{type(e).__name__}: {e}"})
+            continue
+        cmp_ = sp.compare(human, spec, ledger)
+        (raw_dir / f"{tag}.json").write_text(json.dumps({"raw": raw, "spec": spec, "compare": cmp_}, indent=2), encoding="utf-8")
+        s = cmp_["summary"]
+        print(f"   run {i} ({spec['model']['id']}): recovered {s['recovered']}/{s['human_bcs']} human BCs "
+              f"({s['recovered_and_proven']} proven, {s['link_tag_agrees']} same tag), AI BCs {s['ai_proven']}/{s['ai_bcs']} proven, "
+              f"invented tests {len(s['invented_test_names'])}, placebo cited {len(s['placebo_cited'])}, "
+              f"refusals {s['ai_refusals']}")
+        runs.append({"run": tag, "summary": s})
+        score = (s["recovered_and_proven"], s["ai_proven"] - s["ai_unproven_hearsay"])
+        if best is None or score > best[0]:
+            best = (score, tag, spec, cmp_)
+    if best is None:
+        return 1
+    _, tag, spec, cmp_ = best
+    spec["model"]["selected_run"] = tag
+    spec["model"]["runs"] = len(runs)
+    (ROOT / "receipts" / args.pr / "review.ai.json").write_text(json.dumps(spec, indent=2), encoding="utf-8")
+    out = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "reviewer": args.reviewer,
+           "prompt_version": args.prompt, "selected_run": tag,
+           "selection_rule": "most human BCs recovered with proof, then fewest unproven; every run is listed",
+           "runs": runs, **cmp_}
+    (out_dir / "spec_compare.json").write_text(json.dumps(out, indent=2), encoding="utf-8")
+    print(f"   -> receipts/{args.pr}/review.ai.json (run {tag}), out/{args.pr}/spec_compare.json")
+    return 0
+
+
+def cmd_spec_score(args: argparse.Namespace) -> int:
+    from . import spec as sp
+    prs = [p for p in PRS if (ROOT / "out" / p / "spec").exists() and (ROOT / "receipts" / p / "review.json").exists()]
+    human = {p: json.loads((ROOT / "receipts" / p / "review.json").read_text(encoding="utf-8")) for p in prs}
+    ledgers = {p: json.loads((ROOT / "out" / p / "ledger.json").read_text(encoding="utf-8")) for p in prs}
+    res = sp.score_iterations(ROOT / "out", human, ledgers)
+    res["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    (ROOT / "out" / "spec_iterations.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
+    cols = ["recovered_and_proven", "link_tag_agrees", "ai_proven", "ai_bcs", "invented_tests", "placebo_cited",
+            "questions_asking_should", "story_claims", "ai_refusals"]
+    print("pr    run              " + " ".join(c[:10].rjust(10) for c in cols))
+    for r in sorted(res["rows"], key=lambda r: (r["pr"], r["run"])):
+        if "error" in r:
+            print(f"{r['pr']:<5} {r['run']:<16} no answer: {r['error'][:80]}")
+        else:
+            print(f"{r['pr']:<5} {r['run']:<16} " + " ".join(str(r[c]).rjust(10) for c in cols))
+    print("   -> out/spec_iterations.json")
+    return 0
+
+
 TIME_MACHINE = {"2234": {"pr": 2106, "issue": 2234, "bad": "1a74a620"}}
 
 
@@ -255,6 +331,8 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(func=cmd_prove)
     p = sub.add_parser("record", help="build the review record + HTML review page")
     p.add_argument("pr", choices=list(PRS))
+    p.add_argument("--spec", choices=["human", "ai"], default="human",
+                   help="ai: use receipts/<pr>/review.ai.json and write out/<pr>/ai/")
     p.set_defaults(func=cmd_record)
     p = sub.add_parser("calibrate", help="plant bugs in the PR's changed code; measure tests and AI reviewers")
     p.add_argument("pr", choices=list(PRS))
@@ -263,6 +341,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--repeat", type=int, default=1, help="reviewer runs per mutant (models are stochastic)")
     p.add_argument("--only", nargs="*", help="mutant ids, e.g. M01 M08")
     p.set_defaults(func=cmd_calibrate)
+    p = sub.add_parser("spec", help="the reviewer model writes the review spec (never sees PR text)")
+    p.add_argument("pr", choices=list(PRS))
+    p.add_argument("--reviewer", default="gemma", help="gemma | nemotron | openai")
+    p.add_argument("--runs", type=int, default=1, help="independent runs (models are stochastic)")
+    p.add_argument("--prompt", default="v2", help="prompt version (see spec.PROMPTS)")
+    p.set_defaults(func=cmd_spec)
+    p = sub.add_parser("spec-score", help="re-score every saved spec run per prompt version")
+    p.set_defaults(func=cmd_spec_score)
     p = sub.add_parser("timemachine", help="replay the factory on the commit that caused the reported bug")
     p.add_argument("pr", choices=list(TIME_MACHINE))
     p.set_defaults(func=cmd_timemachine)

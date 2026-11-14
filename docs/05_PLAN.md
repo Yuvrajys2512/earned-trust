@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** B1 Time Machine done (Sat 07:45 Helsinki): agent's tests on 1a74a620 → would-have-caught (2 red, 6/8 analyzer silenced; PR #2106 had 0 reviews). Next session: start from `next_session.md`, then `docs/09_CHECKLIST.md` (B2 AI-written spec). (Update this line after every round.)
+**Now:** B2 done (Sat 14:25 Helsinki): Gemma writes the review spec from requirement + diff + ledger + git facts (never PR text); 3 prompt versions scored, 0 invented tests, v2+ refuses "is #2234 fixed" 6/6 (L-15). ~1.5 h behind: next B3 human drill, B4 injection; B5 trimmed to 2283 receipt + scoreboard, B6 optional. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 

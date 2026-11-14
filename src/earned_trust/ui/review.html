@@ -108,7 +108,8 @@ function render(){
     <div class="row"><span class="mono muted">${esc(R.base)} → ${esc(R.head)}</span>
     <button class="theme" onclick="toggleTheme()">theme</button></div></header>`));
   app.append($(`<div><p class="req"><b>${esc(R.requirement.id)}</b> — ${esc(R.requirement.title)} · <a href="${esc(R.requirement.url)}" target="_blank" rel="noopener">issue</a></p>
-    <p class="muted" style="margin:0">Author: ${esc(R.author.label)}. Every claim below links to something that was <b>executed</b>. Anything else is labelled hearsay.</p></div>`));
+    <p class="muted" style="margin:0">Author: ${esc(R.author.label)}. Every claim below links to something that was <b>executed</b>. Anything else is labelled hearsay.</p>
+    <p class="muted" style="margin:4px 0 0">Review spec written by: <b>${esc(R.reviewer.spec_author)}</b>${R.reviewer.model?' · inputs: requirement + diff + executed ledger; PR text never shown':''}.</p></div>`));
 
   // --- summary
   app.append($(`<h2>What was proven before you arrived</h2>`));

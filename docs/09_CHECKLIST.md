@@ -23,12 +23,12 @@ Commits: no Claude co-author trailer (user preference).
 - [x] Record: `time_machine` block in `record.json`; panel on the #2234 review page
 - [x] Docs: LESSONS entry, FAILURE_MODES (human self-merge with 0 reviews), DECISIONS, tick here
 
-## B2 — AI writes the review spec (Sat 10:30–13:00)
-- [ ] `et spec <pr> --reviewer gemma|nemotron`: inputs = requirement + diff + ledger (+ budget), **never PR text**; output `receipts/<pr>/review.ai.json` in the same schema as `review.json`
-- [ ] Record builder accepts `--spec ai`; hearsay guard applies unchanged
-- [ ] Compare AI spec vs human-curated spec for 2297 and 2234 → `out/<pr>/spec_compare.json` + table in LESSONS
-- [ ] Prompt iterations scored (planted-bug / BC recall) → notes for the Nemotron submission text
-- [ ] Docs + tick
+## B2 — AI writes the review spec — DONE 14:25 (Gemma only, no NVIDIA key; L-15)
+- [x] `et spec <pr> --reviewer gemma|nemotron`: inputs = requirement + diff + ledger (+ budget), **never PR text**; output `receipts/<pr>/review.ai.json` in the same schema as `review.json`
+- [x] Record builder accepts `--spec ai`; hearsay guard applies unchanged
+- [x] Compare AI spec vs human-curated spec for 2297 and 2234 → `out/<pr>/spec_compare.json` + table in LESSONS
+- [x] Prompt iterations scored (planted-bug / BC recall) → notes for the Nemotron submission text
+- [x] Docs + tick (L-15, F-30..F-34, DECISIONS; guard check `scripts/check_hearsay_guard.py`)
 
 ## B3 — Human drill (two-sided calibration) (Sat 14:00–15:30)
 - [ ] Drill question built from an existing mutant with executed evidence (e.g. M04 `break`-for-`continue`), disclosed up front ("one question is a drill")

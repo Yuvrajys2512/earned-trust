@@ -16,6 +16,31 @@ Evidence: <command / file / link>
 
 ---
 
+### L-15 — The model can write the spec; what it can't do is go beyond the ledger (Sat 14 Nov 14:25 Helsinki)
+What happened: `et spec <pr>` gives Gemma 4 31B the requirement, the diff of the human-lane files (no docs, no commit messages, no PR text) and the executed ledger; it returns `review.ai.json` in the same schema as our hand-curated spec. 3 prompt versions × 3 runs × 2 PRs = 18 runs; 3 got no answer (Gemma HTTP 500 / read timeouts, recorded as unknown). Scored by `uv run et spec-score` (re-scores every saved run with one rule) plus hand grading of the columns marked *(hand)*.
+
+| | v1 | v2 (+ git facts in input, "predict what happens" questions, story claims from code) | v3 (+ "describe the new behavior, not the absent crash") |
+| --- | --- | --- | --- |
+| 2297: human BCs recovered with proof | 8/9 (3 runs) | 6/6 (2 runs, 1 timeout) | 5/6 (2 runs, 1 timeout) |
+| 2234: human BCs recovered with proof (test overlap) | 6/6 (2 runs, 1 HTTP 500) | 9/9 | 9/9 |
+| Invented test names / placebo cited as proof | 0 / 0 | 0 / 0 | 0 / 0 |
+| Questions that are predictions with an honest reveal *(hand)* | 0/13: all ask "what *should* happen", so the "reveal" is the ideal (2297 BC-2 "reveals" *it still compiles*; the ledger says it breaks) | 15/15 | 13/13 |
+| 2234: refuses "is #2234 fixed?" *(hand)* | 0/2 (one partial: "whether *all* missing diagnostics are restored") | 3/3 | 3/3 |
+| 2234: generator question surfaces "keeps only the first member" *(hand)* | 1/2 | 2/3 | 3/3 |
+| 2234: titles still say "no longer crashes" *(hand)* | 2/2 | 3/3 | 3/3 |
+| 2297: blind intent repeats the agent's false premise ("only where available") *(hand)* | 3/3 | 0/2 | 0/2 |
+| 2297: flags the agent's "not available on netstandard2.0" comment, citing the placebo fact-check test *(hand)* | 0/3 (no slot for it) | 2/2 | 2/2 |
+| 2297: refusals | 2 (incl. "is breaking hand-annotated users acceptable?") | 1 | 1 (that policy refusal is gone) |
+
+What we learned:
+1. **Test-overlap recall flatters the model.** 2234 v1 scored 3/3 but missed the headline: it tagged the crash fix as *intended* and never refused "is #2234 fixed?". The fix wasn't a better prompt: it was giving the model the **executed git fact** (the regression isn't in this history). With it, 6/6 runs refuse. Evidence beats instructions.
+2. **A prompt can make predict-then-reveal useless without anyone noticing.** v1's "what should happen?" questions reveal the ideal, so a human can never mismatch. Only hand-reading the questions caught it; no metric did.
+3. **Code carries the story too.** `#if` guards, comments and test names leaked the agent's false premise into v1's "blind" intent. v2 treats them as claims, and the model then *used a placebo test as a fact-check* (passes on both sides = a fact about the world) to call the claim misleading, matching our human spec.
+4. **Instructions about framing barely move it.** v3's "describe the new behavior" didn't change one title; the question options improved (3/3 surface "first member only"), and that wording comes from our own receipt test's *name* (`…SerializesFirstMemberOnly`). The AI spec is bounded by the ledger, and the best ledger rows are reviewer-written receipts. So the model can write the spec; it does not (yet) write the receipts.
+5. Hearsay guard on a model-written spec: never needed (0 invented names in 15 answers), but proven to bite: `scripts/check_hearsay_guard.py` injects an invented test, a wrong `expect` and a phantom claim test → BC-1/BC-2 unproven, claim unverified.
+What changed: `receipts/<pr>/review.ai.json` (v3) + `out/<pr>/ai/review.html` (page header names the spec author); the human-curated spec stays the demo default and the AI one is shown next to it, with this table as the honest diff.
+Evidence: `out/<pr>/spec/gemma-v*-*.json` (raw reply, input manifest with `pr_text_seen: false`, compare), `out/spec_iterations.json`, `out/<pr>/spec_compare.json`.
+
 ### L-14 — Time Machine: the agent's placebo tests would have caught the original #2234 bug (Sat 14 Nov 07:45 Helsinki)
 What happened: #2234's regression came from `1a74a620` (25 Dec 2024), merged in upstream PR #2106 ("enable analyze union / stop collect field when object marked SuppressSourceGeneration", 9 files, +299/−231), **opened and merged by the same person with zero reviews**. A user reported it 2025-10-17, ~10 months later; still open. We ran the agent's `SuppressSourceGenerationAnalyzerTests` (unchanged) on `1a74a620^` (f0bc35a1) and `1a74a620`: **2 tests broken-by-pr** (`MemberWithoutKeyIsReported`, `AllowPrivateRequiredIsReported`: pass on parent, analyzer reports 0 diagnostics on the bad commit), and in **6 of 8** tests the analyzer goes silent. Both red tests are *placebos* on today's base.
 What we learned: the review gap isn't AI-specific: the bug was born in an unreviewed human PR. A test that proves nothing about one PR can be exactly the receipt another PR needed. "Earned trust" can be measured on a repo's own history: replay the factory on the commits that already hurt you.
