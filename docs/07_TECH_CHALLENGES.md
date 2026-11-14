@@ -8,15 +8,15 @@ Rule: integrate a partner only where it is **load-bearing** in the concept (judg
 | --- | --- | --- | --- | --- |
 | **OpenAI Codex** | $10k/$5k/$2.5k credits | Build agent for this repo **and** the *author agent* whose PRs we review (author ≠ reviewer family, P-reviewer≠author) | Meaningful use while building; claim $100/participant | TODO |
 | **NVIDIA Nemotron** | 2× RTX 5080 | **The reviewer model.** Must be *Nemotron 3.5 Super VL*. Submission text: what the model does + how we improved outputs → planted-bug catch rate before/after prompt changes (25% of score = quality improved through evaluation) | Short text in submission form | TODO |
-| **Modal** | $2k cash + $3k credits | Sandboxes run untrusted agent code: base/head catching tests + mutants in parallel. `modal deploy` the review UI → live URL (demo = 15%) | Live deployed URL. Credit code `VVX-2QX-8HW` | TODO |
+| **Modal** | $2k cash + $3k credits | Sandboxes run untrusted agent code: base/head catching tests + mutants in parallel. `modal deploy` the review UI → live URL (demo = 15%) | Live deployed URL. Credit code `VVX-2QX-8HW` | **DONE (B8):** live URL https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run (`deploy/modal_app.py`, static pages + signed attestations). Sandboxes for test matrices: not used |
 
 ## Tier B — ~1 h each, genuinely part of the system
 
 | Partner | Prize | Role | Status |
 | --- | --- | --- | --- |
 | **Entire** (MLH) | projector | Record author-agent sessions (Sessions); publish the review record as a **Trail** (agent reviews whether change matches intent); use Graph + Brain where possible. mlh.link/junction-26 | TODO |
-| **Gemma** | €1,000 ×3 | Second, independent reviewer from a different family (counters self-preference, F-09); run on Modal | TODO |
-| **Aiven** | €1k/€750/€500 | Postgres: signed review records + reviewer track record across PRs → trust is *earned per area* and withdrawn after escapes | TODO |
+| **Gemma** | €1,000 ×3 | Second, independent reviewer from a different family (counters self-preference, F-09); run on Modal | **DONE:** reviewer in planted-bug calibration (9/10), B2 spec writer (prompts v1-v3), B4 naive foil (4/6 with injected PR text). Called via Google API, not run on Modal |
+| **Aiven** | €1k/€750/€500 | Postgres: signed review records + reviewer track record across PRs → trust is *earned per area* and withdrawn after escapes | **DONE (B7):** `et trust` -> tables `et_events` (28 executed screener events) + `et_records` (attested record versions); per-region trust in every record/page |
 
 ## Tier C — only if ahead
 

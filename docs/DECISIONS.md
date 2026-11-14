@@ -7,6 +7,7 @@ Format: newest first. One line of decision, one line of why. Times Helsinki.
 
 | When | Decision | Why |
 | --- | --- | --- |
+| Sat 14 Nov (Helsinki), B8 | Publish a static site on Modal (https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run), built by `et site` with an allowlist of files and a secret scan that refuses to build on a hit | A public URL must never carry keys or the DB URL; static pages keep reviewer predictions and signatures in the viewer's browser |
 | Sat 14 Nov (Helsinki), B7 | Trust ledger in Aiven Postgres; events only from executed, hashed files (no hand-typed rows); rule in code: escape → withdrawn until 3 later calibrated reviews (union catches all, tests >= 80%); unknown = low trust; pages read an exported snapshot (offline-safe), records embed it inside the evidence hash | Trust "earned per area, withdrawn after escapes" must be computable and auditable; the DB is the system of record, the snapshot keeps the demo working without network |
 | Sat 14 Nov (Helsinki), B7 | Synthetic test signatures are deleted from the ledger after the end-to-end test | A demo track record must not contain fake humans |
 | Sat 14 Nov 14:50 (Helsinki) | Quarantine is regex-only and advisory; the control is that no model in the pipeline reads author text. The naive foil is run and published (every reply stored), including runs where Gemma resisted | A detector you depend on becomes the attack surface; showing the foil honestly (4/6, not "0/6") is more credible |

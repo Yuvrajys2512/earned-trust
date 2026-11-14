@@ -16,6 +16,11 @@ Evidence: <command / file / link>
 
 ---
 
+### L-22 — Live: the receipts are a URL anyone can check (Sat 14 Nov Helsinki, B8)
+What happened: `et site` collects only the publishable files (scoreboard, review pages, AI-spec pages, budgets, records, signed attestations, allowed_signers) into `out/site/`, and **refuses** if any file contains a key, the database URL, "avnadmin", "postgres://" or a private key. `modal deploy deploy/modal_app.py` serves it (stdlib http.server, no extra deps): https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run. Checked: 9 paths return 200; a statement + signature downloaded from the live site verifies with stock `ssh-keygen -Y verify`; the live scoreboard renders headlines and trust states.
+What we learned: static is enough. Prediction, reveal and signing run in the viewer's browser and nothing is uploaded back, so the public URL holds no reviewer data and needs no auth. The judge can verify our signature with tools they already have.
+Evidence: `deploy/modal_app.py`, `out/site/` (built by `et site`).
+
 ### L-21 — Trust ledger: one escape in 2024 still decides what a human must look at in 2026 (Sat 14 Nov Helsinki, B7)
 What happened: `et trust` collects every executed screener outcome as an event (28: 20 planted-bug results for tests and Gemma, 6 injection runs, 1 backtest, 1 escape), upserts them into **Aiven PostgreSQL** (`et_events`, `et_records`: every attested record version keyed by its evidence hash), reads them back, and computes per-region trust with a rule written in code: an escape withdraws trust until 3 later calibrated reviews catch every planted bug with tests >= 80%; no data = "unknown" = low trust. Result: `TypeCollector.cs` is **withdrawn** (escape: 1a74a620 merged with 0 reviews, reported 10 months later; #2234's calibration doesn't restore it because tests caught only 6/10). Every other src file the PRs touch is **unknown**. The ledger snapshot goes into each record (inside the hash) and onto each page.
 What we learned:

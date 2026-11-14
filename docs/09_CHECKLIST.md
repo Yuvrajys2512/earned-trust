@@ -59,7 +59,7 @@ Commits: no Claude co-author trailer (user preference).
 - [ ] Walkthrough script (from 08 §6) + dry run
 - [ ] Sleep 23:30–05:00
 - [x] B7 trust ledger (Aiven): `et trust`, per-region trust in records/pages/scoreboard (L-21)
-- [ ] B8 Modal live URL
+- [x] B8 Modal live URL: https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run (L-22)
 - [ ] Demo video ≤3 min
 - [ ] Clean DECISIONS / LESSONS / FAILURE_MODES, README
 - [ ] Submit by 09:30

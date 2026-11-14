@@ -526,6 +526,41 @@ def cmd_trust(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_site(args: argparse.Namespace) -> int:
+    """Collect the publishable pages + signed evidence into out/site/ (what B8 deploys). Nothing else goes out."""
+    import shutil
+    site = ROOT / "out" / "site"
+    shutil.rmtree(site, ignore_errors=True)
+    site.mkdir(parents=True)
+    files = ["index.html"]
+    for key in PRS:
+        for rel in ("review.html", "ai/review.html", "budget.html", "record.json",
+                    "attestation/statement.json", "attestation/statement.json.sig"):
+            if (ROOT / "out" / key / rel).exists():
+                files.append(f"{key}/{rel}")
+    if (ROOT / "out" / "attest" / "allowed_signers").exists():
+        files.append("attest/allowed_signers")
+    for f in files:
+        (site / f).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / "out" / f, site / f)
+    # Guard: nothing secret-looking may be published.
+    from .models import load_env
+    load_env()
+    secrets = [os.environ[k] for k in ("DATABASE_URL", "GOOGLE_API_KEY", "OPENAI_API_KEY", "NVIDIA_API_KEY") if os.environ.get(k)]
+    for f in site.rglob("*"):
+        if f.is_file():
+            text = f.read_text(encoding="utf-8", errors="ignore")
+            leaked = [k for k in secrets if k and k in text] + [m for m in ("avnadmin", "PRIVATE KEY", "postgres://") if m in text]
+            if leaked:
+                shutil.rmtree(site)
+                print(f"REFUSED: {f.relative_to(site)} contains secret-looking content; site removed", file=sys.stderr)
+                return 1
+    print(f"== site: {len(files)} files, secret scan clean -> {site.relative_to(ROOT)}")
+    for f in files:
+        print(f"   {f}")
+    return 0
+
+
 TIME_MACHINE = {"2234": {"pr": 2106, "issue": 2234, "bad": "1a74a620"}}
 
 
@@ -583,6 +618,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--runs", type=int, default=1, help="independent runs (models are stochastic)")
     p.add_argument("--prompt", default="v2", help="prompt version (see spec.PROMPTS)")
     p.set_defaults(func=cmd_spec)
+    p = sub.add_parser("site", help="collect publishable pages + signed evidence into out/site/ (secret-scanned)")
+    p.set_defaults(func=cmd_site)
     p = sub.add_parser("trust", help="trust ledger: sync evidence events to Postgres (Aiven), compute per-region trust")
     p.add_argument("--local", action="store_true", help="don't use the database")
     p.set_defaults(func=cmd_trust)
