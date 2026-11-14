@@ -16,6 +16,12 @@ Evidence: <command / file / link>
 
 ---
 
+### L-14 — Time Machine: the agent's placebo tests would have caught the original #2234 bug (Sat 14 Nov 07:45 Helsinki)
+What happened: #2234's regression came from `1a74a620` (25 Dec 2024), merged in upstream PR #2106 ("enable analyze union / stop collect field when object marked SuppressSourceGeneration", 9 files, +299/−231), **opened and merged by the same person with zero reviews**. A user reported it 2025-10-17, ~10 months later; still open. We ran the agent's `SuppressSourceGenerationAnalyzerTests` (unchanged) on `1a74a620^` (f0bc35a1) and `1a74a620`: **2 tests broken-by-pr** (`MemberWithoutKeyIsReported`, `AllowPrivateRequiredIsReported`: pass on parent, analyzer reports 0 diagnostics on the bad commit), and in **6 of 8** tests the analyzer goes silent. Both red tests are *placebos* on today's base.
+What we learned: the review gap isn't AI-specific: the bug was born in an unreviewed human PR. A test that proves nothing about one PR can be exactly the receipt another PR needed. "Earned trust" can be measured on a repo's own history: replay the factory on the commits that already hurt you.
+Caveat: `MemberTypeMustBeMessagePackObjectIsReported` fails on the parent only because the diagnostic location moved since 2024 (test written for newer code); counted as failing-both, not as a catch.
+Evidence: `bash scripts/timemachine_2234.sh` → `uv run et timemachine 2234` → `out/2234/timemachine/timemachine.json` (includes the `gh api` commands); panel on `out/2234/review.html`.
+
 ### L-13 — #2297's 10-minute review finds a build break the agent's tests miss (Sat 14 Nov ~10:20)
 What happened: `scripts/verify_2297_base.sh` (agent's test + 4 reviewer receipts, base vs head) → ledger: catching 3, **broken-by-pr 1**, failing-both 1, placebo 1.
 - **T-04 broken-by-pr:** a consumer with `[GeneratedMessagePackResolver][ExcludeFromCodeCoverage] partial class MyResolver` compiles on base and fails on the PR with **CS0579 duplicate attribute** (the attribute is `AllowMultiple = false`; the generator now adds a second copy to the same partial type). A plausible user setup becomes a build break on upgrade.

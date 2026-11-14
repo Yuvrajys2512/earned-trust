@@ -130,6 +130,9 @@ function render(){
   }
   app.append(sc);
 
+  // --- time machine
+  if(R.time_machine) app.append(timeMachineCard(R.time_machine));
+
   // --- questions
   app.append($(`<h2>Predict, then see — ${nq} behavior changes</h2>`));
   app.append($(`<p class="muted" style="margin-top:-4px">Pick what <b>should</b> happen before the system shows what the PR <b>does</b>. Your prediction is hashed and locked first, so the AI can't anchor you. Every mismatch is the review.</p>`));
@@ -156,6 +159,36 @@ function render(){
   app.append(calibrationCard(R.calibration));
 
   app.append(signPanel());
+}
+
+function timeMachineCard(tm){
+  const h = tm.history, p = h.pr||{}, iss = h.issue||{};
+  const d = s => s ? String(s).slice(0,10) : '?';
+  const placebosNow = new Set((R.placebo_tests||[]).map(t=>t.test));
+  const placeboCaught = tm.caught_by.filter(t=>placebosNow.has(t));
+  const months = (p.merged_at && iss.created_at) ? Math.round((new Date(iss.created_at)-new Date(p.merged_at))/2.63e9) : null;
+  const rows = tm.entries.map(e=>`<tr><td class="tname">${esc(e.test.split('.').pop())}</td>
+    <td>${outcome(e.parent)}<div class="muted" style="font-size:12px">${esc(e.parent_says)}</div></td>
+    <td>${outcome(e.bad_commit)}<div class="muted" style="font-size:12px">${esc(e.bad_commit_says)}</div></td>
+    <td>${verdictPill(e.verdict)}</td></tr>`).join('');
+  const el = $(`<div><h2>Time Machine: would this gate have stopped the original bug?</h2>
+  <div class="card" style="border-left:4px solid var(--accent)">
+    <div class="row"><span class="pill ${tm.verdict==='would-have-caught'?'p-ok':'p-bad'}">${esc(tm.verdict.replace(/-/g,' '))}</span>
+      <span class="mono muted">${esc(tm.parent)} → ${esc(tm.bad_commit)}</span></div>
+    <p style="margin:10px 0 6px">The bug in ${esc(R.requirement.id)} was introduced by commit <span class="mono">${esc(tm.bad_commit)}</span>,
+      merged ${d(p.merged_at)} in upstream PR <a href="${esc(p.html_url)}" target="_blank" rel="noopener">#${esc((p.html_url||'').split('/').pop())}</a>
+      (<i>${esc(p.title)}</i>, ${p.changed_files} files, +${p.additions}/−${p.deletions}).
+      Opened by <b>${esc(p.author)}</b>, merged by <b>${esc(p.merged_by)}</b>, <b>${h.review_count===0?'zero reviews':esc(h.review_count)+' reviews'}</b>.
+      A user reported the bug on ${d(iss.created_at)}${months?`, about <b>${months} months later</b>`:''}; the issue is ${esc(iss.state)}.</p>
+    <p style="margin:6px 0">We replayed the factory on that commit with the <b>agent's own #2234 tests, unchanged</b>.
+      On the 2024 commit, <b>${tm.caught_by.length} go red</b> (pass on the parent, fail on the commit) and in <b>${tm.silenced_diagnostics.length} of ${tm.entries.length}</b> the analyzer goes silent (0 diagnostics where the parent reported some).
+      ${placeboCaught.length===tm.caught_by.length&&placeboCaught.length?`Both red tests are <b>placebos on today's code</b>: they prove nothing about the agent's PR, but they would have stopped the original bug. Right tests, wrong commit, ${months?months+' months':'months'} late.`:''}</p>
+    <details><summary>Per-test results (parent vs bad commit)</summary>
+      <table><thead><tr><th>Test</th><th>Parent</th><th>Bad commit</th><th>Verdict</th></tr></thead><tbody>${rows}</tbody></table>
+      <p class="mono muted" style="font-size:11.5px">${Object.values(h.commands||{}).map(esc).join('<br>')}</p>
+    </details>
+  </div></div>`);
+  return el;
 }
 
 function calibrationCard(cal){

@@ -6,6 +6,7 @@
     uv run et record 2234           # facts + ledger + receipts/2234/review.json -> record.json + review.html
     uv run et calibrate 2234 --tests            # planted bugs vs the test suite (local dotnet)
     uv run et calibrate 2234 --reviewer gemma   # planted bugs vs the AI reviewer
+    uv run et timemachine 2234      # replay on the commit that caused the bug (scripts/timemachine_2234.sh first)
     uv run et budget 2297           # machine-cleared vs human files (needs scripts/regen_2297.sh first)
 """
 from __future__ import annotations
@@ -102,6 +103,16 @@ def cmd_record(args: argparse.Namespace) -> int:
     bud_path = out_dir / "budget.json"
     budget = json.loads(bud_path.read_text(encoding="utf-8")) if bud_path.exists() else None
     record = rec.build_record(pr, facts, ledger, spec, out_dir / "verify" / "evidence", calibration, budget)
+    tm_path = out_dir / "timemachine" / "timemachine.json"
+    if tm_path.exists():   # executed backtest on the commit that caused the bug; covered by the record hash
+        import hashlib
+        record["time_machine"] = json.loads(tm_path.read_text(encoding="utf-8"))
+        record["checked"].append(
+            f"Time Machine: the agent's tests replayed on {record['time_machine']['parent']} -> "
+            f"{record['time_machine']['bad_commit']} (the commit that caused the bug): {record['time_machine']['verdict']}")
+        record.pop("evidence_sha256", None)
+        body = json.dumps(record, sort_keys=True, separators=(",", ":")).encode()
+        record["evidence_sha256"] = hashlib.sha256(body).hexdigest()
     (out_dir / "record.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
     tpl = (Path(__file__).parent / "ui" / "review.html").read_text(encoding="utf-8")
     embedded = json.dumps(record).replace("</", "<\\/")
@@ -203,6 +214,34 @@ def cmd_budget(args: argparse.Namespace) -> int:
     return 0
 
 
+TIME_MACHINE = {"2234": {"pr": 2106, "issue": 2234, "bad": "1a74a620"}}
+
+
+def cmd_timemachine(args: argparse.Namespace) -> int:
+    from . import timemachine as tm
+    cfg = TIME_MACHINE[args.pr]
+    run_dir = ROOT / "out" / args.pr / "timemachine"
+    if not any(run_dir.glob("base-*.trx")):
+        print(f"no runs in {run_dir.relative_to(ROOT)}; run scripts/timemachine_{args.pr}.sh first", file=sys.stderr)
+        return 1
+    parent = gf.git(args.repo, "rev-parse", "--short=8", cfg["bad"] + "^").strip()
+    res = tm.build(run_dir, cfg["pr"], cfg["issue"], cfg["bad"], parent)
+    res["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    out = run_dir / "timemachine.json"
+    out.write_text(json.dumps(res, indent=2), encoding="utf-8")
+    h = res["history"]
+    print(f"== time machine #{cfg['issue']}: {parent} -> {cfg['bad']}  verdict: {res['verdict']}")
+    print(f"   upstream PR #{cfg['pr']}: {h['pr'].get('title')!r}  author={h['pr'].get('author')} "
+          f"merged_by={h['pr'].get('merged_by')} reviews={h['review_count']}")
+    print(f"   issue opened {h['issue'].get('created_at')} ({h['issue'].get('state')})")
+    for e in res["entries"]:
+        print(f"   {e['verdict']:<13} {e['test']}")
+        print(f"        parent: {e['parent']:<6} {e['parent_says']}")
+        print(f"        bad:    {e['bad_commit']:<6} {e['bad_commit_says']}")
+    print(f"   -> {out.relative_to(ROOT)}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="et", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--repo", default=DEFAULT_REPO, help="path to the msgpack clone (default: ../msgpack or $MSGPACK_REPO)")
@@ -224,6 +263,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--repeat", type=int, default=1, help="reviewer runs per mutant (models are stochastic)")
     p.add_argument("--only", nargs="*", help="mutant ids, e.g. M01 M08")
     p.set_defaults(func=cmd_calibrate)
+    p = sub.add_parser("timemachine", help="replay the factory on the commit that caused the reported bug")
+    p.add_argument("pr", choices=list(TIME_MACHINE))
+    p.set_defaults(func=cmd_timemachine)
     p = sub.add_parser("budget", help="attention budget: which files a machine clears, which a human reads")
     p.add_argument("pr", choices=list(PRS))
     p.set_defaults(func=cmd_budget)

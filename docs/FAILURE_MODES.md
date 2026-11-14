@@ -32,5 +32,6 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | F-26 | Agent's explanation states a false platform fact to justify a design choice ("attribute not available on netstandard2.0 / .NET Framework") and its own test enshrines it | seen | 2297 README + `CodeCoverageExclusionTests` guard test; refuted by T-06 | Story claims are hearsay until executed: a fact-check receipt compiles the attribute on both targets |
 | F-27 | Agent's tests check text, not semantics, and only the happy path: the PR breaks consumers who already annotated their partial resolver (CS0579) and no test notices | seen | 2297 T-04 `broken-by-pr` | Reviewer writes receipts from the consumer's side (compile user code + generated code), not string search |
 | F-28 | Shared test harness cache corrupted by parallel downloads makes every test fail before doing work | seen (by us) | L-12 | Machine checks fail closed (files go to the human); warm caches serially |
+| F-29 | Human self-merge with zero reviews ships a silent regression (analyzer goes quiet); found by a user 10 months later | seen (history) | upstream PR #2106 / commit 1a74a620 → issue #2234; L-14 | Gate every merge on receipts, not on a reviewer's presence; Time Machine replays the factory on such commits |
 
 Add rows as the build surfaces new ones (especially failures of *our own* reviewer).

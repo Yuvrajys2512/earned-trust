@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** Rounds 0–3 done. **Remaining work follows `docs/08_WINNING_PLAN.md`** (written Sat 07:10 Helsinki after a research pass): B1 Time Machine (replay on 1a74a620, the real unreviewed origin of #2234) → B2 AI-written spec → B3 human drill → B4 injection demo → B5 4-PR portfolio → B6 attestation; feature freeze 21:00. Note: machine clock is IST; older log times are IST. (Update this line after every round.)
+**Now:** B1 Time Machine done (Sat 07:45 Helsinki): agent's tests on 1a74a620 → would-have-caught (2 red, 6/8 analyzer silenced; PR #2106 had 0 reviews). Next session: start from `next_session.md`, then `docs/09_CHECKLIST.md` (B2 AI-written spec). (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 

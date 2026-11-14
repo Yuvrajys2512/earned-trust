@@ -15,13 +15,13 @@ Commits: no Claude co-author trailer (user preference).
 - [x] Round 3: #2297 attention budget, ledger, review record (`1bfd4de`, `556a28d`)
 - [x] Research pass + winning plan `docs/08_WINNING_PLAN.md` (`60a422c`)
 
-## B1 — Time Machine: replay on 1a74a620 (Sat 07:15–10:00)
-- [ ] Spike (≤45 min): worktrees `D:\msgpack-wt\tm-parent` (`1a74a620^`) and `tm-bad` (`1a74a620`); copy the agent's `tests/MessagePack.SourceGenerator.Tests/SuppressSourceGenerationAnalyzerTests.cs` from `origin/ju26-issue-2234`; build. Kill rule: if it won't compile after trimming, fall back to git + GitHub facts only.
-- [ ] `scripts/timemachine_2234.sh`: runs the tests on both, TRX → `out/2234/timemachine/`
-- [ ] Ledger for the backtest (`et prove`-style; expect `broken-by-pr` on the suppressed-type tests)
-- [ ] GitHub facts snapshot saved as evidence: PR #2106 (title, author, merged_by, 0 reviews), issue #2234 created date → `out/2234/timemachine/github.json` (with the `gh api` commands)
-- [ ] Record: `time_machine` block in `record.json`; panel on the #2234 review page
-- [ ] Docs: LESSONS entry, FAILURE_MODES (human self-merge with 0 reviews), DECISIONS, tick here
+## B1 — Time Machine: replay on 1a74a620 — DONE (verdict: would-have-caught; L-14)
+- [x] Spike (≤45 min): worktrees `D:\msgpack-wt\tm-parent` (`1a74a620^`) and `tm-bad` (`1a74a620`); copy the agent's `tests/MessagePack.SourceGenerator.Tests/SuppressSourceGenerationAnalyzerTests.cs` from `origin/ju26-issue-2234`; build. Kill rule: if it won't compile after trimming, fall back to git + GitHub facts only.
+- [x] `scripts/timemachine_2234.sh`: runs the tests on both, TRX → `out/2234/timemachine/`
+- [x] Ledger for the backtest (`et prove`-style; expect `broken-by-pr` on the suppressed-type tests)
+- [x] GitHub facts snapshot saved as evidence: PR #2106 (title, author, merged_by, 0 reviews), issue #2234 created date → `out/2234/timemachine/github.json` (with the `gh api` commands)
+- [x] Record: `time_machine` block in `record.json`; panel on the #2234 review page
+- [x] Docs: LESSONS entry, FAILURE_MODES (human self-merge with 0 reviews), DECISIONS, tick here
 
 ## B2 — AI writes the review spec (Sat 10:30–13:00)
 - [ ] `et spec <pr> --reviewer gemma|nemotron`: inputs = requirement + diff + ledger (+ budget), **never PR text**; output `receipts/<pr>/review.ai.json` in the same schema as `review.json`
