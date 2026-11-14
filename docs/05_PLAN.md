@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** Round 1 done (Sat ~09:00): `et facts → et prove → et record` builds `out/2234/record.json` + `review.html` (predict → reveal → sign). 8 catching (4 agent + 4 ours), 6 placebo, 3 BCs, 2 refusals. Next: Round 2 — reviewer model + planted-bug calibration (needs API keys). (Update this line after every round.)
+**Now:** Round 2 mostly done (Sat ~08:00): `et calibrate` plants 10 bugs; tests catch 6/10 (fields 0/3), Gemma reviewer 9/10, union 10/10; Gemma reports 0 issues on the real PR (F-20). Calibration panel in the UI. Next: field-path receipts, Nemotron when access arrives, Modal deploy, Aiven track record. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 
@@ -23,9 +23,9 @@ Rule: **every round ends in something demoable**, even if hardcoded. Rounds 1–
 - **Exit:** full flow runs on 2234. You now have a submission.
 
 ## Round 2 — Measure the reviewer (Sat ~13:00 → ~18:00)
-- [ ] Plant 10 mutants in 2234's changed hunks (Stryker.NET `--since` or LLM mutants)
-- [ ] Run the AI reviewer on mutated copies; compute catch rate per file → `calibration`
-- [ ] Show "confidence = measured" in the UI
+- [x] Plant 10 mutants in 2234's changed hunks (hand-written operators, `src/earned_trust/mutate.py`)
+- [x] Run the AI reviewer on mutated copies; compute catch rate per region → `calibration` (Gemma now; Nemotron pending access)
+- [x] Show "confidence = measured" in the UI
 - **Checkpoint 18:00:** if Rounds 1–2 aren't demo-ready, drop Blueprints entirely and cut Round 4.
 
 ## Round 3 — Attention budget on #2297 (Sat evening)

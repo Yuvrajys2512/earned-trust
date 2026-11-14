@@ -151,12 +151,30 @@ function render(){
 
   // --- calibration
   app.append($(`<h2>How far to trust the AI reviewer</h2>`));
-  const cal = R.calibration;
-  app.append($(`<div class="card">${cal.status==='not-measured'
-    ? `<span class="pill p-warn">uncalibrated</span> ${esc(cal.note)}`
-    : `<div class="row"><span class="pill p-info">measured</span><b>${cal.caught}/${cal.planted}</b> planted bugs caught on this PR</div><p class="muted">${esc(cal.note||'')}</p>`}</div>`));
+  app.append(calibrationCard(R.calibration));
 
   app.append(signPanel());
+}
+
+function calibrationCard(cal){
+  if(cal.status!=='measured') return $(`<div class="card"><span class="pill p-warn">uncalibrated</span> ${esc(cal.note)}</div>`);
+  const names = Object.keys(cal.screeners);
+  const label = s => s==='tests' ? 'Tests (agent + receipts)' : `AI reviewer: ${s.split(':')[1]}` + (cal.models[s.split(':')[1]]?` <span class="mono muted">${esc(cal.models[s.split(':')[1]])}</span>`:'');
+  const pct = v => v.measured ? Math.round(100*v.caught/v.measured)+'%' : 'n/a';
+  const cell = v => v===true||v==='killed'||v==='killed-by-compiler' ? '<span class="pill p-ok">caught</span>'
+    : v===false||v==='survived' ? '<span class="pill p-bad">missed</span>' : '<span class="pill p-warn">unknown</span>';
+  const el = $(`<div class="card"><p class="muted" style="margin-top:0">${esc(cal.method)}</p>
+    <div class="stats" style="margin-bottom:12px"></div><div data-warn></div>
+    <table><thead><tr><th>Planted bug</th><th>Region</th>${names.map(n=>`<th>${n==='tests'?'Tests':esc(n.split(':')[1])}</th>`).join('')}</tr></thead><tbody></tbody></table>
+    <p style="margin-bottom:0"><b>Trust by region</b> ${Object.entries(cal.by_region).map(([r,c])=>`<span class="mono" style="margin-left:10px">${esc(r)}: ${Object.entries(c).map(([k,v])=>`${k==='tests'?'tests':k.split(':')[1]} ${esc(v)}`).join(' · ')}</span>`).join('')}</p></div>`);
+  const st = el.querySelector('.stats');
+  names.forEach(n=>{ const v=cal.screeners[n]; st.append($(`<div class="stat"><div class="n">${v.caught}/${v.measured}</div><div class="l">${label(n)} · ${pct(v)}${v.measured<v.planted?` · ${v.planted-v.measured} unknown`:''}</div></div>`)); });
+  st.append($(`<div class="stat"><div class="n" style="color:${cal.missed_by_all.length?'var(--bad)':'var(--ok)'}">${cal.union_caught}/${cal.planted}</div><div class="l">caught by at least one screener${cal.missed_by_all.length?` · missed by all: ${cal.missed_by_all.join(', ')}`:''}</div></div>`));
+  for(const [name,n] of Object.entries(cal.reviewer_on_real_pr||{})){
+    if(n===0) el.querySelector('[data-warn]').append($(`<div class="banner b-miss">On the real PR (nothing planted) the ${esc(name)} reviewer reported <b>0 issues</b>. It would have approved the silent member drop that the receipts prove (BC-2). Reviewer silence is not evidence.</div>`));
+  }
+  cal.rows.forEach(r=>el.querySelector('tbody').append($(`<tr><td><span class="mono">${esc(r.id)}</span> ${esc(r.description)}</td><td class="muted">${esc(r.region)}</td>${names.map(n=>`<td>${cell(r[n])}</td>`).join('')}</tr>`)));
+  return el;
 }
 
 function questionCard(bc){

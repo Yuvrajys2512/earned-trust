@@ -4,6 +4,8 @@
     uv run et facts all
     uv run et prove 2234            # TRX runs -> out/2234/ledger.json (add --run to re-run tests)
     uv run et record 2234           # facts + ledger + receipts/2234/review.json -> record.json + review.html
+    uv run et calibrate 2234 --tests            # planted bugs vs the test suite (local dotnet)
+    uv run et calibrate 2234 --reviewer gemma   # planted bugs vs the AI reviewer
 """
 from __future__ import annotations
 
@@ -94,7 +96,9 @@ def cmd_record(args: argparse.Namespace) -> int:
         m = re.search(r"SDK (\d+\.\d+\.\d+)", run_log.read_text(encoding="utf-8", errors="replace"))
         if m:
             ledger["toolchain"] = {"dotnet_sdk": m.group(1), "note": "global.json overridden to SDK 9 in worktrees (L-04)"}
-    record = rec.build_record(pr, facts, ledger, spec, out_dir / "verify" / "evidence")
+    cal_path = out_dir / "calibration.json"
+    calibration = json.loads(cal_path.read_text(encoding="utf-8")) if cal_path.exists() else None
+    record = rec.build_record(pr, facts, ledger, spec, out_dir / "verify" / "evidence", calibration)
     (out_dir / "record.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
     tpl = (Path(__file__).parent / "ui" / "review.html").read_text(encoding="utf-8")
     embedded = json.dumps(record).replace("</", "<\\/")
@@ -104,6 +108,62 @@ def cmd_record(args: argparse.Namespace) -> int:
           f"{len(record['refusals'])} refusals, {len(record['hearsay'])} hearsay")
     print(f"   evidence_sha256 {record['evidence_sha256']}")
     print(f"   -> {(out_dir / 'record.json').relative_to(ROOT)}, {(out_dir / 'review.html').relative_to(ROOT)}")
+    return 0
+
+
+def cmd_calibrate(args: argparse.Namespace) -> int:
+    from . import calibrate as cal, models, mutate as mu
+    pr = PRS[args.pr]
+    out_dir = ROOT / "out" / args.pr
+    path = out_dir / "calibration.json"
+    raw_dir = out_dir / "calibration"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+
+    def save_raw(key: str, value: dict) -> None:   # one file per run: parallel runs can't clobber each other
+        f = raw_dir / f"{key.replace(':', '_').replace('#', '-')}.json"
+        if args.only and f.exists():               # partial rerun: merge into the earlier run
+            old = json.loads(f.read_text(encoding="utf-8"))["data"]
+            # never replace a real answer with "no answer" (unknown is not newer evidence)
+            value = {k: v for k, v in value.items() if not (v.get("error") and k in old and not old[k].get("error"))}
+            value = {**old, **value}
+        f.write_text(json.dumps({"key": key, "data": value}, indent=2), encoding="utf-8")
+    mutants = [m for m in mu.MUTANTS if not args.only or m.id in args.only]
+    run_control = not args.only or "control" in args.only
+    if args.tests:
+        wt = Path(os.environ.get("WT_ROOT", str(Path(args.repo).parent / "msgpack-wt"))) / f"{args.pr}-head"
+        print(f"== tests vs {len(mutants)} mutants in {wt}")
+        save_raw("tests", cal.run_tests_on_mutants(wt, out_dir / "mutants", mutants))
+    for name in args.reviewer:
+        model = models.get_reviewer(name)
+        req = f"{pr.requirement.id}: {pr.requirement.title}" + chr(10) + pr.requirement.summary
+        head_ref = gf.resolve_branch(args.repo, pr.branch)
+        for i in range(args.repeat):
+            key = name if args.repeat == 1 else f"{name}#{i + 1}"
+            print(f"== reviewer {key} ({model.models[0]}) vs {len(mutants)} mutants + control")
+            save_raw(f"reviewer:{key}", cal.run_reviewer_on_mutants(args.repo, pr.base, head_ref, req, model, mutants, control=run_control))
+    data = {"raw": {}}
+    if path.exists():  # legacy single-file layout
+        data["raw"].update(json.loads(path.read_text(encoding="utf-8")).get("raw", {}))
+    for f in sorted(raw_dir.glob("*.json")):
+        d = json.loads(f.read_text(encoding="utf-8"))
+        data["raw"][d["key"]] = d["data"]
+    reviews = {k.split(":", 1)[1]: v for k, v in data["raw"].items() if k.startswith("reviewer:")}
+    # Re-score stored findings with the current matcher (no new model calls), so every run is judged by one rule.
+    head_src = cal.git_show(args.repo, gf.resolve_branch(args.repo, pr.branch), mu.TARGET)
+    for rv in reviews.values():
+        for m in mu.MUTANTS:
+            if m.id in rv:
+                rv[m.id]["planted_lines"] = mu.mutated_lines(head_src, mu.apply(head_src, m)[0])
+                rv[m.id]["caught"], rv[m.id]["hits"] = cal.caught(rv[m.id].get("findings"), rv[m.id]["planted_lines"])
+    data["summary"] = cal.summarize(mu.MUTANTS, data["raw"].get("tests"), reviews)
+    data["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    sm = data["summary"]
+    for k, v in sm.items():
+        if isinstance(v, dict) and "caught" in v:
+            print(f"   {k:<22} caught {v['caught']}/{v['measured']} measured ({v['planted']} planted)")
+    print("   by region:", json.dumps(sm["by_region"]))
+    print(f"   -> {path.relative_to(ROOT)}")
     return 0
 
 
@@ -121,6 +181,13 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("record", help="build the review record + HTML review page")
     p.add_argument("pr", choices=list(PRS))
     p.set_defaults(func=cmd_record)
+    p = sub.add_parser("calibrate", help="plant bugs in the PR's changed code; measure tests and AI reviewers")
+    p.add_argument("pr", choices=list(PRS))
+    p.add_argument("--tests", action="store_true", help="run the test suite against each mutant (local dotnet)")
+    p.add_argument("--reviewer", action="append", default=[], help="gemma | nemotron | openai (repeatable)")
+    p.add_argument("--repeat", type=int, default=1, help="reviewer runs per mutant (models are stochastic)")
+    p.add_argument("--only", nargs="*", help="mutant ids, e.g. M01 M08")
+    p.set_defaults(func=cmd_calibrate)
     args = ap.parse_args(argv)
     return args.func(args)
 

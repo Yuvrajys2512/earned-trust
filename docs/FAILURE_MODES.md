@@ -22,5 +22,12 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | F-16 | Author tests only cover what the author thought about; biggest effect untested | seen | #2234: agent tests cover the analyzer; the generator's silent member drop is untested (L-07) | Reviewer writes its own catching tests from the diff, not from the author's tests |
 | F-17 | Evidence harness fails silently (empty worktree) and looks like test failures | seen | L-05 | Harness aborts on setup failure; "didn't run" = unknown |
 | F-18 | Reviewer's own claims don't match evidence (name mismatch) | seen | L-06 | Record builder fails closed: unmatched claim → hearsay |
+| F-19 | Our summarizer counted "didn't run" as "missed" (0/10) | seen | L-09 | Unknown excluded from denominators; shown as "(n unknown)" |
+| F-20 | AI reviewer silent on the real PR: 0 findings, would approve a proven silent data-drop | seen | L-10, Gemma control run | Reviewer silence never clears anything; catching tests + human prediction do |
+| F-21 | AI reviewer hallucinates a defect (claims a diagnostic is missing that exists) | seen | Gemma on M03, line 1022 | Reviewer findings are hearsay until a test reproduces them |
+| F-22 | Test suite blind to a duplicated code path (fields), 0/3 planted bugs caught | seen | L-10 | Per-region calibration exposes it; write receipts for the gap |
+| F-23 | Reviewer model times out / errors intermittently | seen | Gemma 31B HTTP 500s and read timeouts (M07) | Retry, fall back, record the model that answered; no answer = unknown |
+| F-24 | Judge-of-the-judge drift: scoring rule tuned after seeing results | seen (by us) | L-08 | One rule for all mutants, fixed in code, all stored findings re-scored |
+| F-25 | Partial rerun overwrote a valid reviewer answer with a timeout (unknown) | seen (by us) | control re-run during M07 retry | `--only` skips control; merge never replaces an answer with an unknown |
 
 Add rows as the build surfaces new ones (especially failures of *our own* reviewer).

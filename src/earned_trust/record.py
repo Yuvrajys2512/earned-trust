@@ -28,7 +28,38 @@ def _ev(entry: dict) -> dict:
     }
 
 
-def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path) -> dict:
+CAUGHT = (True, "killed", "killed-by-compiler")
+
+
+def calibration_block(cal: dict | None) -> dict:
+    """Planted-bug results -> what the human sees as 'how far to trust each screener on THIS PR'."""
+    if not cal or "summary" not in cal:
+        return {"status": "not-measured",
+                "note": "No planted-bug run for this PR. Treat the AI reviewer as uncalibrated."}
+    sm = cal["summary"]
+    screeners = ["tests"] + [k for k in sm if k.startswith("reviewer:") and isinstance(sm[k], dict) and "caught" in sm[k]]
+    rows = sm["rows"]
+    union = sum(1 for r in rows if any(r.get(s) in CAUGHT for s in screeners))
+    missed_by_all = [r["id"] for r in rows if not any(r.get(s) in CAUGHT for s in screeners)]
+    controls = {k.split(":")[1]: sm[k] for k in sm if k.endswith(":control_findings")}
+    return {
+        "status": "measured",
+        "method": "Known bugs planted one at a time in the PR's changed regions (hidden from the reviewer, "
+                  "like Threat Image Projection in airport screening). Tests: does any test go red? "
+                  "Reviewer: does a finding cite the planted spot? Unknown (no answer) is never counted as caught or missed.",
+        "planted": sm["planted"],
+        "screeners": {s: sm[s] for s in screeners if s in sm},
+        "models": {k.split(":")[1]: sm[k] for k in sm if k.endswith(":model")},
+        "union_caught": union,
+        "missed_by_all": missed_by_all,
+        "by_region": sm["by_region"],
+        "rows": rows,
+        "reviewer_on_real_pr": {name: (len(f) if f is not None else None) for name, f in controls.items()},
+        "reviewer_on_real_pr_findings": controls,
+    }
+
+
+def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, calibration: dict | None = None) -> dict:
     tests = _by_test(ledger)
     hearsay: list[str] = []
 
@@ -78,14 +109,22 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path) 
             out[e["verdict"]] = out.get(e["verdict"], 0) + 1
         return out
 
+    def fmt(d: dict) -> str:
+        return ", ".join(f"{v} {k}" for k, v in sorted(d.items(), key=lambda kv: -kv[1]))
+
     checked = [
         f"Git history: is the regression named in {pr.requirement.id} in this code's history? "
         f"→ {facts.get('regression_check', {}).get('verdict', 'n/a')}",
-        f"Agent's {len(agent_tests)} new tests run on base and on head: {counts(agent_tests)}",
-        f"Reviewer's {len(reviewer_tests)} own catching tests (source generator output) run on base and head: "
-        f"{counts(reviewer_tests)}",
-        f"{len(facts['files'])} changed files classified: {facts['file_classes']}",
+        f"Agent's {len(agent_tests)} new tests run on base and on head: {fmt(counts(agent_tests))}",
+        f"Reviewer's {len(reviewer_tests)} own tests of the source generator's output, run on base and head: "
+        f"{fmt(counts(reviewer_tests))}",
+        f"{len(facts['files'])} changed files classified: {fmt(facts['file_classes'])}",
     ]
+    cb = calibration_block(calibration)
+    if cb["status"] == "measured":
+        checked.append(f"{cb['planted']} known bugs planted in the changed code: " + "; ".join(
+            f"{'tests' if k == 'tests' else k.split(':')[1]} caught {v['caught']}/{v['measured']}"
+            for k, v in cb["screeners"].items()) + f"; at least one screener caught {cb['union_caught']}/{cb['planted']}")
 
     record = {
         "record_version": "0.2",
@@ -109,8 +148,7 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path) 
         "story_claims": claims,
         "checked": checked,
         "not_checked": spec["not_checked"],
-        "calibration": {"status": "not-measured",
-                        "note": "Planted-bug catch rate not yet run (Round 2). Treat the AI reviewer as uncalibrated."},
+        "calibration": calibration_block(calibration),
         "hearsay": hearsay,
         "signoff": None,
     }
