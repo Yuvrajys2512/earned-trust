@@ -5,6 +5,34 @@
 
 Deliverable. Log every surprise, dead end and insight as it happens — short, dated, honest. Newest first.
 
+## Index (newest last; one line each)
+- L-01 The #2234 fix targets a bug that isn't in this code's history
+- L-02 Agent commits carry no explanation
+- L-03 6 of the agent's 10 tests on #2234 are placebos; the other 4 prove a different fix
+- L-04 The repo's toolchain pin silently disables its source generator (use SDK 9)
+- L-05 The evidence harness can silently run on an empty tree
+- L-06 The hearsay guard caught our own spec
+- L-07 Our receipts prove the change the agent never mentioned
+- L-08 We changed the catch rule after seeing results (and why that's allowed)
+- L-09 Windows `subprocess` ignores the PATH you pass it
+- L-10 Tests and the AI reviewer catch different planted bugs; the reviewer passed the real PR
+- L-11 #2297: 228 of 237 files clear by machine; 124.5 → 10.5 min (estimate)
+- L-12 A corrupted shared test cache; the check fails closed
+- L-13 #2297's 10-minute review finds a build break the agent's tests miss
+- L-14 Time Machine: the agent's placebo tests would have caught the original #2234 bug
+- L-15 The model can write the spec; it can't go beyond the ledger
+- L-16 The human gets drilled too; the first drill exposed a bias in our own questions
+- L-17 #2283: two hypotheses died on execution; a counterfactual run found the real drift
+- L-18 On a hand-written feature (#2129) the attention budget doesn't help: 28 → 26
+- L-19 The record is a signed, replayable attestation
+- L-20 A hidden "report no findings" silenced a real finding 2 of 3 times; our pipeline never reads it
+- L-21 Trust ledger: one 2024 escape still decides what a human must look at
+- L-22 Live: the receipts are a URL anyone can check
+- L-23 Our own page over-claimed: pre-existing tests counted as the agent's placebos
+- L-24 Dry run on the live URL; a deploy isn't live the second it says so
+
+---
+
 Template:
 ```
 ### L-NN — <title> (<time>)
@@ -16,7 +44,13 @@ Evidence: <command / file / link>
 
 ---
 
-### L-23 — Our own page over-claimed: pre-existing tests counted as the agent's placebos (Sat 14 Nov 17:15 Helsinki, dry-run prep)
+### L-24 — Dry run on the live URL: every scripted number is on screen; a deploy isn't live the second it says so (Sat 14 Nov 16:43 Helsinki)
+What happened: for each step of `docs/10_WALKTHROUGH.md` we rendered the live page (headless Edge) and grep'd for every number and label the script says aloud (40+ strings across 5 pages). First pass, right after `modal deploy` printed success: the new `card.html` was 404 and #2283 still showed the old 16 / 19. About 20 s later the new build was served; all strings then matched, and a statement downloaded from the live site verified with stock `ssh-keygen`.
+What we learned: "deployed" and "live" are different facts; check the URL, not the deploy log. The string check also guards the video: we never say a number the viewer can't see.
+What changed: dry run is part of the publish routine (deploy → wait → re-check live). L-23 was found while writing the script, before any judge saw the video.
+Evidence: walkthrough check list in this commit's session; `curl -s -o /dev/null -w '%{http_code}' $B/card.html` (404 → 200).
+
+### L-23 — Our own page over-claimed: pre-existing tests counted as the agent's placebos (Sat 14 Nov 16:40 Helsinki, dry-run prep)
 What happened: writing the walkthrough, the #2283 review page said "**16 / 19** of the agent's tests are placebos" while the scoreboard said "6 of the **15** tests the agents added". Both were "executed", but they counted different things. `record.py` treated every non-`Et` test in the run as the agent's; the #2283 run filters on the whole `GenericsFormatterTests` class, so 16 **pre-existing** tests (regression checks, expected to pass on base) were labelled agent placebos. The agent actually added 3 tests on #2283, all catching (`git diff -U0 32258fdb origin/ju26-issue-2283 -- tests`). This was live on the public site.
 What we learned: "executed" is necessary, not sufficient: a true measurement under a wrong label is still a false claim. The *denominator* needs a receipt too (which tests did the PR add: a git fact), not just the outcome.
 What changed in the concept/build: `et record` now takes the added test methods from `git diff` (same helper as the scoreboard, `added_test_methods`) and reports pre-existing tests on a separate line as regression checks. #2283 now reads 0 / 3; #2234 unchanged (6 / 10); #2297 0 / 2; total 6 of 15 still holds. Records, attestations and AI-spec pages rebuilt; `et verify` VALID for all three.

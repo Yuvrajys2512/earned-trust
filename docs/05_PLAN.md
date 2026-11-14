@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** Concept card v2 done (Sat 16:45 Helsinki): `docs/03_CONCEPT.md` v2 (P8–P10) + one-page `card.html` linked from the scoreboard. Next: README refresh, walkthrough script, dry run + redeploy. (Update this line after every round.)
+**Now:** Deliverables done except the video (Sat 16:44 Helsinki): concept card v2 + `card.html`, README, `docs/10_WALKTHROUGH.md`, live dry run (L-24), #2283 over-claim fixed (L-23), logs indexed. Next: sleep 23:30–05:00; Sunday record the video from the walkthrough, write submission text, submit by 09:30. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 
@@ -42,5 +42,5 @@ Rule: **every round ends in something demoable**, even if hardcoded. Rounds 1–
 ## Final — Deliverables (Sun ~06:00 → 09:30)
 - [x] Concept card final (03_CONCEPT.md → one slide/page: `card.html`)
 - [ ] Record the demo video (live walkthrough of 2234 + 2297 slider)
-- [ ] Clean LESSONS_LOG.md, DECISIONS.md, FAILURE_MODES.md
+- [x] Clean LESSONS_LOG.md, DECISIONS.md, FAILURE_MODES.md
 - [ ] Submit by 09:30 (30-min buffer)

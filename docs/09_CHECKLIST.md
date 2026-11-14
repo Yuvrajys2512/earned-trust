@@ -56,10 +56,10 @@ Commits: no Claude co-author trailer (user preference).
 
 ## Feature freeze 21:00 — Deliverables
 - [x] Concept card v2 (`docs/03_CONCEPT.md` → one-page visual `card.html`; add P8–P10)
-- [ ] Walkthrough script (from 08 §6) + dry run
+- [x] Walkthrough script (from 08 §6) + dry run (`docs/10_WALKTHROUGH.md`; live check L-24)
 - [ ] Sleep 23:30–05:00
 - [x] B7 trust ledger (Aiven): `et trust`, per-region trust in records/pages/scoreboard (L-21)
 - [x] B8 Modal live URL: https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run (L-22)
 - [ ] Demo video ≤3 min
-- [ ] Clean DECISIONS / LESSONS / FAILURE_MODES (README refreshed Sat 16:55)
+- [x] Clean DECISIONS / LESSONS / FAILURE_MODES, README (LESSONS index added; timestamps checked)
 - [ ] Submit by 09:30
