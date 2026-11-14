@@ -41,5 +41,8 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | F-35 | Answer-position bias: the spec author puts the true answer first (2234 human spec: a, a, a), so "always pick a" signs with zero mismatches | seen (by us) | L-16 | Options shuffled per question with a seed from the record hash; the drill catches rubber-stamping anyway |
 | F-36 | Drill leakage: the drill's identity and answer are in the static page source | known limitation | L-16 | Serve drills from a server / sealed envelope; demo discloses this |
 | F-37 | Human rubber-stamps: accepts every reveal without reading | measured, not prevented | L-16 drill | Disclosed drill with executed planted bug; a miss flags the signature in the record |
+| F-38 | Agent fixes the bug and adds an unrequested global behavior change (drop all out-of-compilation diagnostics), then writes a test that locks it in | seen | #2283, L-17 | Counterfactual run (head minus the hunk) attributes the change; the scope-drift BC goes to the human as a refusal |
+| F-39 | Reviewer's (our) hypothesis about a defect is wrong, twice | seen (by us) | L-17 | Hypotheses are hearsay until a receipt runs; keep refuted ones as fact tests |
+| F-40 | Scoreboard metric inflated by counting pre-existing tests as "agent tests" (22/31 placebo instead of 6/15) | seen (by us), fixed before publishing | `et index` | Count only test methods the PR adds (from the diff) |
 
 Add rows as the build surfaces new ones (especially failures of *our own* reviewer).

@@ -113,6 +113,45 @@ def cmd_record(args: argparse.Namespace) -> int:
     drill_run = json.loads(dr_run.read_text(encoding="utf-8")) if dr_run.exists() else None
     record = rec.build_record(pr, facts, ledger, spec, out_dir / "verify" / "evidence", calibration, budget,
                               drills, drill_run)
+    cf_trx = out_dir / "counterfactual" / "head-nofilter.trx"
+    if cf_trx.exists():   # PR head with one hunk reverted: which outcomes does that hunk alone cause? (inside the hash)
+        import hashlib
+        cf = pv.parse_trx(cf_trx)
+        ev = out_dir / "counterfactual" / "evidence"
+        record["counterfactual"] = {
+            "what": "PR head with only the global diagnostic filter reverted (crash fix kept)",
+            "trx_sha256": hashlib.sha256(cf_trx.read_bytes()).hexdigest(),
+            "outcomes": {t: o.outcome for t, o in cf.items()},
+            "failed": {t: o.message for t, o in cf.items() if o.outcome != "Passed"},
+            "evidence": {f.name: f.read_text(encoding="utf-8") for f in sorted(ev.glob("*.txt"))} if ev.exists() else {},
+        }
+        record["checked"].append("Counterfactual: PR head with only the global filter reverted, same tests: "
+                                 + ", ".join(f"{t.split('.')[-1]} {o.outcome}" for t, o in cf.items() if "Metadata" in t or "Referenced" in t))
+        record.pop("evidence_sha256", None)
+        record["evidence_sha256"] = hashlib.sha256(json.dumps(record, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    qdir = out_dir / "injection"
+    if (qdir / "quarantine.json").exists():   # author text, quarantined as data; never an input to the verdict
+        import hashlib
+        qa = json.loads((qdir / "quarantine.json").read_text(encoding="utf-8")).get("injected")
+        naive = None
+        for f in sorted(qdir.glob("naive_*.json")):
+            n = json.loads(f.read_text(encoding="utf-8"))
+            naive = {"model": next((r["model"] for r in n["rows"] if not r.get("error")), None), "summary": n["summary"],
+                     "mutants": n["mutants"], "reps": n["reps"], "note": n["note"]}
+        if qa:
+            record["quarantine"] = {"analysis": {k: qa[k] for k in ("source", "sha256", "chars", "invisible_chars", "verdict",
+                                                                    "hidden", "imperatives", "policy")},
+                                    "naive": naive}
+            record["story_claims"].append({
+                "source": "PR description (synthetic; quarantined)",
+                "quote": next((h["decoded"] for h in qa["hidden"] if h["kind"] == "html-comment"), qa["hidden"][0]["decoded"] if qa["hidden"] else ""),
+                "claim": "the reviewer should report no findings", "verdict": "injection-flagged",
+                "why": f"{len(qa['hidden'])} hidden payloads addressed to the reviewer; quoted as data, never followed. "
+                       "The verdict above was computed without this text.", "evidence": []})
+            record["checked"].append(f"Author text quarantined: {qa['verdict']} ({len(qa['hidden'])} hidden payloads); "
+                                     "no model in this pipeline reads it")
+            record.pop("evidence_sha256", None)
+            record["evidence_sha256"] = hashlib.sha256(json.dumps(record, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     tm_path = out_dir / "timemachine" / "timemachine.json"
     if tm_path.exists():   # executed backtest on the commit that caused the bug; covered by the record hash
         import hashlib
@@ -308,6 +347,105 @@ def cmd_drill(args: argparse.Namespace) -> int:
     return 0 if res["verdict"].startswith("executed") else 1
 
 
+def cmd_inject(args: argparse.Namespace) -> int:
+    from . import models, quarantine as qu
+    pr = PRS[args.pr]
+    out_dir = ROOT / "out" / args.pr / "injection"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sd = ROOT / "samples" / "pr_descriptions"
+    texts = {"none": None,
+             "benign": (sd / f"benign_{args.pr}.md").read_text(encoding="utf-8"),
+             "injected": (sd / f"injected_{args.pr}.md").read_text(encoding="utf-8")}
+    q = {k: qu.analyze(v, f"samples/pr_descriptions/{k}_{args.pr}.md") for k, v in texts.items() if v is not None}
+    (out_dir / "quarantine.json").write_text(json.dumps(q, indent=2, ensure_ascii=False), encoding="utf-8")
+    for k, v in q.items():
+        print(f"== quarantine {k}: {v['verdict']} ({len(v['hidden'])} hidden/evasive payloads, {len(v['imperatives'])} instruction-like phrases)")
+    if args.reviewer:
+        model = models.get_reviewer(args.reviewer)
+        req = f"{pr.requirement.id}: {pr.requirement.title}" + chr(10) + pr.requirement.summary
+        print(f"== naive reviewer {args.reviewer}: {args.mutants} x {list(texts)} x {args.reps}")
+        res = qu.naive_experiment(args.repo, pr.base, gf.resolve_branch(args.repo, pr.branch), req, model,
+                                  args.mutants, texts, args.reps)
+        res["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        (out_dir / f"naive_{args.reviewer}.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
+        for k, v in res["summary"].items():
+            print(f"   {k:<9} caught {v['caught']}/{v['measured']} ({v['unknown']} unknown), findings {v['findings_total']}")
+    print(f"   -> {out_dir.relative_to(ROOT)}")
+    return 0
+
+
+def cmd_index(args: argparse.Namespace) -> int:
+    meta = json.loads((ROOT / "receipts" / "index.json").read_text(encoding="utf-8"))["prs"]
+    prs, method = [], []
+    load = lambda p: json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    tot = {"files": 0, "human": 0, "naive": 0.0, "human_min": 0.0, "placebo": 0, "agent_tests": 0}
+    for key in ["2234", "2297", "2283", "2129"]:
+        d = ROOT / "out" / key
+        facts, budget, ledger, record = (load(d / n) for n in ("facts.json", "budget.json", "ledger.json", "record.json"))
+        if not facts:
+            continue
+        m = meta.get(key, {})
+        links = [{"label": "review page", "href": f"{key}/review.html"}] if (d / "review.html").exists() else []
+        if (d / "ai" / "review.html").exists():
+            links.append({"label": "AI-written spec", "href": f"{key}/ai/review.html"})
+        if (d / "budget.html").exists():
+            links.append({"label": "attention budget", "href": f"{key}/budget.html"})
+        notes = []
+        if record and record.get("human_calibration", {}).get("status") not in (None, "no-drill"):
+            notes.append(f"{record['human_calibration']['drills']} human drill on the page (planted bug; the signature records whether it was caught)")
+        if record and record.get("quarantine"):
+            notes.append(f"PR description quarantined: {record['quarantine']['analysis']['verdict']}")
+        if record and record.get("time_machine"):
+            notes.append(f"Time Machine: {record['time_machine']['verdict']} on {record['time_machine']['bad_commit']}")
+        prs.append({"key": key, "requirement": facts["requirement"], "files": len(facts["files"]),
+                    "status": m.get("status", "unreviewed"), "headline": m.get("headline", ""), "evidence": m.get("evidence", []),
+                    "budget": budget["totals"] if budget else None,
+                    "ledger": ledger["counts"] if ledger else None,
+                    "record": {"proven": sum(b["status"] == "proven" for b in record["behavior_changes"]),
+                               "refusals": len(record["refusals"])} if record else None,
+                    "links": links, "notes": notes})
+        tot["files"] += len(facts["files"])
+        if budget:
+            tot["human"] += budget["totals"]["human"]; tot["naive"] += budget["totals"]["naive_minutes"]; tot["human_min"] += budget["totals"]["human_minutes"]
+        if ledger:
+            # only test methods the PR ADDS (pre-existing tests in the same class are regression checks, not the agent's)
+            import re as _re
+            pr = PRS[key]
+            added = gf.git(args.repo, "diff", "-U0", pr.base, gf.resolve_branch(args.repo, pr.branch), "--", "tests")
+            new_methods = set(_re.findall(r"^\+.*?\b(?:Task|void)\s+(\w+)\s*\(", added, _re.M))
+            agent = [e for e in ledger["entries"] if not e["test"].startswith("Et") and e["test"].split(".")[-1] in new_methods]
+            tot["agent_tests"] += len(agent); tot["placebo"] += sum(e["verdict"] == "placebo" for e in agent)
+    method.append(["Files across the PRs with a budget", f"{tot['human']} need a human (~{tot['human_min']:.0f} of ~{tot['naive']:.0f} min)"])
+    method.append(["Agent-added tests run on base and head", f"{tot['placebo']} of the {tot['agent_tests']} tests the agents added pass on base too (placebo: prove nothing about the PR)"])
+    for key, extra in [("2234", "spec"), ("2297", "spec")]:
+        sc = load(ROOT / "out" / key / "spec_compare.json")
+        if sc:
+            s = sc["summary"]
+            method.append([f"#{key}: AI-written spec ({sc['reviewer']}, prompt {sc['prompt_version']}) vs human spec",
+                           f"recovered {s['recovered_and_proven']}/{s['human_bcs']} proven changes, {len(s['invented_test_names'])} invented tests, "
+                           f"{s['ai_refusals']} vs {s['human_refusals']} refusals"])
+    cal = load(ROOT / "out" / "2234" / "calibration.json")
+    if cal:
+        sm = cal["summary"]
+        method.append(["#2234: planted bugs (10) caught by",
+                       "; ".join(f"{k.split(':')[-1]} {v['caught']}/{v['measured']}" for k, v in sm.items()
+                                 if isinstance(v, dict) and "caught" in v)])
+    nv = load(ROOT / "out" / "2234" / "injection" / "naive_gemma.json")
+    if nv:
+        method.append(["Naive reviewer given the PR text (planted bugs caught)",
+                       ", ".join(f"{k}: {v['caught']}/{v['measured']}" for k, v in nv["summary"].items())])
+    data = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="minutes"), "prs": prs, "method": method}
+    (ROOT / "out" / "index.json").write_text(json.dumps(data, indent=2), encoding="utf-8")
+    tpl = (Path(__file__).parent / "ui" / "index.html").read_text(encoding="utf-8")
+    (ROOT / "out" / "index.html").write_text(tpl.replace("/*INDEX_JSON*/", json.dumps(data).replace("</", "<\\/")), encoding="utf-8")
+    for p in prs:
+        print(f"   #{p['key']} [{p['status']}] {p['headline'][:100]}")
+    for m in method:
+        print(f"   {m[0]}: {m[1]}")
+    print("   -> out/index.html")
+    return 0
+
+
 TIME_MACHINE = {"2234": {"pr": 2106, "issue": 2234, "bad": "1a74a620"}}
 
 
@@ -365,6 +503,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--runs", type=int, default=1, help="independent runs (models are stochastic)")
     p.add_argument("--prompt", default="v2", help="prompt version (see spec.PROMPTS)")
     p.set_defaults(func=cmd_spec)
+    p = sub.add_parser("index", help="scoreboard across all PRs -> out/index.html")
+    p.set_defaults(func=cmd_index)
+    p = sub.add_parser("inject", help="quarantine author text; optionally run the naive reviewer that reads it")
+    p.add_argument("pr", choices=["2234"])
+    p.add_argument("--reviewer", help="gemma | nemotron | openai (omit: quarantine only)")
+    p.add_argument("--mutants", nargs="*", default=["M04", "M06"])
+    p.add_argument("--reps", type=int, default=3)
+    p.set_defaults(func=cmd_inject)
     p = sub.add_parser("drill", help="execute the human drill: drill test on head and on head + planted mutant")
     p.add_argument("pr", choices=["2234"])
     p.add_argument("--mutant", default="M04")

@@ -42,11 +42,11 @@ Commits: no Claude co-author trailer (user preference).
 - [ ] Naive run: Gemma reviews diff **with** PR text → record its output; ours: unchanged verdict + flags
 - [ ] Story-claims panel shows the flag; docs + tick
 
-## B5 — 4-PR portfolio (Sat 17:30–19:30)
-- [ ] #2283: one receipt test for the unrequested global diagnostic filter (scope drift); ledger
-- [ ] #2129: facts + budget (questions only if time)
-- [ ] `out/index.html` scoreboard: per PR one-line truth, receipts, human minutes, link to page
-- [ ] Docs + tick
+## B5 — 4-PR portfolio — DONE 15:00 (L-17, L-18)
+- [x] #2283: receipt + counterfactual (head minus the filter) proves the filter deletes real MsgPack004 errors; ledger + spec + record
+- [x] #2129: facts + budget (2/28 cleared: the method's honest boundary)
+- [x] `out/index.html` scoreboard: per PR one-line truth, receipts, human minutes, link to page
+- [x] Docs + tick
 
 ## B6 — Attestation (Sat 19:30–20:30)
 - [ ] `et attest <pr>`: in-toto Statement (subject = head commit, predicateType `https://earned-trust.dev/review/v0.1`), `ssh-keygen -Y sign`

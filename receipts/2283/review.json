@@ -1,0 +1,86 @@
+{
+  "_about": "Reviewer spec for ju26-issue-2283 (B5, human-curated). Every behavior change cites ledger tests and the verdict it expects; the record builder checks it against the ledger. BC-2 is backed by a counterfactual run (PR head with only the global filter reverted), recorded in out/2283/counterfactual/ by scripts/verify_2283_base.sh.",
+  "spec_author": "reviewer (human-curated)",
+  "blind_intent": "Requirement #2283: the generator (CS8785) and analyzer (AD0001) must stop crashing when a [MessagePackObject] member's type is a closed generic value type from a referenced assembly. A fix should keep reporting every real problem it reported before, just without the crash.",
+  "behavior_changes": [
+    {
+      "id": "BC-1",
+      "title": "No more analyzer/generator crash on closed generic value types from a referenced assembly",
+      "requirement_link": "intended",
+      "link_why": "Exactly what #2283 asks for: AD0001 IndexOutOfRangeException on base, clean on head.",
+      "tests": [
+        "GenericsFormatterTests.ClosedGenericStruct_FromMetadataReference",
+        "GenericsFormatterTests.ClosedGenericRecordStruct_FromMetadataReference"
+      ],
+      "question": {
+        "context": "// Lib.dll (referenced as a package)\n[MessagePackObject]\npublic struct MyGenericStruct<T> { [Key(0)] public T Content { get; set; } }\n\n// App\n[MessagePackObject]\npublic class MyObject { [Key(0)] public MyGenericStruct<int> Value { get; set; } }",
+        "prompt": "After this PR, what happens when App builds?",
+        "options": [
+          {"id": "a", "text": "Builds clean; the resolver is generated"},
+          {"id": "b", "text": "AD0001: the MessagePack analyzer throws IndexOutOfRangeException"},
+          {"id": "c", "text": "MsgPack003: MyGenericStruct<int> must be a MessagePackObject"}
+        ],
+        "revealed": "a",
+        "reveal_text": "Base: AD0001 (IndexOutOfRangeException in TypeCollector) and the resolver is silently not generated. Head: no diagnostics, resolver generated."
+      }
+    },
+    {
+      "id": "BC-2",
+      "title": "MsgPack004 errors about a referenced generic type's unkeyed member are now silently dropped (global filter, not requested)",
+      "requirement_link": "unexplained",
+      "link_why": "#2283 asks to stop a crash. The PR also wraps TypeCollector's diagnostic callback so EVERY diagnostic located outside this compilation is dropped. Counterfactual: the PR head with only that filter reverted reports MsgPack004 (error) for Box<int>.Unkeyed and does not crash; the filter alone removes it. The agent's own UnkeyedMember test asserts the silence.",
+      "tests": ["EtScopeDriftReceiptsTests.ReferencedClosedGeneric_UnkeyedMember_IsReportedNotCrashedOrDropped"],
+      "expect": "failing-both",
+      "evidence_files": ["referenced-closed-generic-unkeyed.txt"],
+      "question": {
+        "context": "// Lib.dll (referenced)\n[MessagePackObject]\npublic struct Box<T>\n{\n    [Key(0)] public T Value { get; set; }\n    public int Unkeyed { get; set; }      // no [Key], no [IgnoreMember]\n}\n\n// App: the formatter for Box<int> is generated HERE, in App\n[MessagePackObject]\npublic class Order { [Key(0)] public Lib.Box<int> Payload { get; set; } }",
+        "prompt": "After this PR, what does the developer of App see when building?",
+        "options": [
+          {"id": "a", "text": "MsgPack004 error: Box<int>.Unkeyed needs [Key] or [IgnoreMember]"},
+          {"id": "b", "text": "Nothing: it builds clean"},
+          {"id": "c", "text": "AD0001: the analyzer crashes"}
+        ],
+        "revealed": "b",
+        "reveal_text": "Base: MsgPack004 error for Box<int>.Unkeyed, then AD0001 crash. Head: no diagnostics at all. Head with only the global filter reverted: MsgPack004 errors, no crash. The crash fix keeps the error; the unrequested filter deletes it."
+      }
+    }
+  ],
+  "refusals": [
+    {
+      "id": "R-1",
+      "topic": "Should App be told about problems in a referenced generic type whose formatter App generates?",
+      "decision": "I won't decide this.",
+      "why": "The PR's comment says such problems 'are reported by the compilation that defines them'. That holds only if Lib ran the MessagePack analyzer, and the formatter for Box<int> is generated in App, not Lib. Reporting policy across assemblies is a maintainer call; the evidence shows the PR changed it without being asked.",
+      "evidence": ["BC-2", "out/2283/counterfactual/head-nofilter.trx"]
+    },
+    {
+      "id": "R-2",
+      "topic": "Should the global filter be split out of this fix?",
+      "decision": "Human decision.",
+      "why": "The crash fix (FirstOrDefault + GetPropertyIdentifierLocation) stands on its own: the counterfactual run has no crash. The filter is a separate behavior change that needs its own requirement.",
+      "evidence": ["BC-1", "BC-2"]
+    }
+  ],
+  "story_claims": [
+    {
+      "source": "code comment (TypeCollector.ReportIfLocatedInCompilation)",
+      "quote": "Their problems are reported by the compilation that defines them, so they are dropped here",
+      "claim": "Dropping these diagnostics loses nothing, because the defining assembly reports them.",
+      "tests": ["EtScopeDriftReceiptsTests.ReferencedClosedGeneric_UnkeyedMember_IsReportedNotCrashedOrDropped"],
+      "verdict": "unverified",
+      "why": "Not shown by anything executed: Box<T> compiled without error in Lib (no MessagePack analyzer ran there), and the closed type Box<int> only exists in App."
+    },
+    {
+      "source": "agent test name",
+      "quote": "ClosedGenericStruct_FromMetadataReference_UnkeyedMember",
+      "claim": "This test checks the crash fix for unkeyed members.",
+      "verdict": "misleading",
+      "why": "It passes only because of the global filter: with the filter reverted (crash fix kept) it fails with 2 MsgPack004 errors. It locks in the silence, not the fix."
+    }
+  ],
+  "not_checked": [
+    "Runtime: whether the generated Box<int> formatter silently skips Unkeyed (data loss) or fails; we checked diagnostics only.",
+    "Other diagnostics the global filter can drop (any rule whose location is outside App's syntax trees); we executed one.",
+    "Non-generic referenced types: executed fact, the analyzer doesn't descend into them on base or head (EtScopeDriftReceiptsTests.Fact_ReferencedNonGenericType_MembersAreNotAnalyzed, placebo)."
+  ]
+}

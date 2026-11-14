@@ -1,0 +1,38 @@
+{
+  "_about": "One line of truth per PR for out/index.html. Each headline must be backed by an executed receipt named in `evidence`.",
+  "prs": {
+    "2234": {
+      "status": "proven-elsewhere",
+      "headline": "Fixes an analyzer crash on duplicate keys, not the reported #2234 regression (not in this history); 6 of the agent's 10 tests prove nothing.",
+      "evidence": [
+        "regression_check NOT-IN-HISTORY",
+        "ledger: 6 placebo",
+        "Time Machine: would-have-caught on 1a74a620"
+      ]
+    },
+    "2297": {
+      "status": "regression",
+      "headline": "Does what #2297 asks on net8.0, but breaks the build (CS0579) for users who already excluded their resolver, and skips netstandard2.0 for a false reason.",
+      "evidence": [
+        "ledger: EtCoverageReceiptsTests.UserExcludedResolver_StillCompiles broken-by-pr",
+        "222/222 snapshots byte-identical"
+      ]
+    },
+    "2283": {
+      "status": "scope-drift",
+      "headline": "Fixes the crash, and adds an unrequested global filter that silently deletes real MsgPack004 errors: proven by re-running the PR head with only the filter reverted.",
+      "evidence": [
+        "ledger: 2 catching (crash fix)",
+        "EtScopeDriftReceiptsTests failing-both; counterfactual head-without-filter passes",
+        "agent test UnkeyedMember fails without the filter"
+      ]
+    },
+    "2129": {
+      "status": "unreviewed",
+      "headline": "A 28-file feature (new analyzers MsgPack019-022). The attention budget clears only 2 files: on hand-written features, machine clearing doesn't help, so this one needs a real human review.",
+      "evidence": [
+        "budget: 2 of 28 machine-cleared"
+      ]
+    }
+  }
+}

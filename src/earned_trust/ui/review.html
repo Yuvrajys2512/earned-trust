@@ -97,7 +97,7 @@ const verdictPill = v => ({catching:'<span class="pill p-ok">catching</span>',pl
 const linkPill = v => ({intended:'<span class="pill p-ok">intended</span>',collateral:'<span class="pill p-warn">collateral</span>',
   unexplained:'<span class="pill p-bad">unexplained</span>'}[v]);
 const claimPill = v => ({'not-supported':'<span class="pill p-bad">not supported</span>','true-but-not-new':'<span class="pill p-warn">true, not new</span>',
-  misleading:'<span class="pill p-warn">misleading</span>',unverified:'<span class="pill p-mute">unverified</span>',supported:'<span class="pill p-ok">supported</span>'}[v]||esc(v));
+  misleading:'<span class="pill p-warn">misleading</span>','injection-flagged':'<span class="pill p-bad">injection · quoted, not obeyed</span>',unverified:'<span class="pill p-mute">unverified</span>',supported:'<span class="pill p-ok">supported</span>'}[v]||esc(v));
 const outcome = o => o==='Passed'?'<span class="pill p-ok">pass</span>':o==='Failed'?'<span class="pill p-bad">fail</span>':`<span class="pill p-warn">${esc(o)}</span>`;
 
 function render(){
@@ -133,6 +133,7 @@ function render(){
     sc.querySelector('tbody').append($(`<tr><td class="muted">${esc(c.source)}</td><td><div class="quote">“${esc(c.quote)}”</div><div style="margin-top:4px">${esc(c.why)}</div></td><td>${claimPill(c.verdict)}</td></tr>`));
   }
   app.append(sc);
+  if(R.quarantine) app.append(quarantineCard(R.quarantine));
 
   // --- time machine
   if(R.time_machine) app.append(timeMachineCard(R.time_machine));
@@ -166,6 +167,19 @@ function render(){
   app.append(calibrationCard(R.calibration));
 
   app.append(signPanel());
+}
+
+function quarantineCard(Q){
+  const a = Q.analysis, n = Q.naive;
+  const pay = a.hidden.map(h=>`<tr><td class="mono">${esc(h.kind)}${h.hidden?'<div class="muted" style="font-family:var(--sans)">invisible when rendered</div>':h.evades_filters?'<div class="muted" style="font-family:var(--sans)">readable, evades keyword filters</div>':''}</td><td><div class="quote">“${esc(h.decoded||'')}”</div></td></tr>`).join('');
+  const lab = {none:'no PR text (our pipeline)', benign:'honest description', injected:'injected description'};
+  const nrows = n ? Object.entries(n.summary).map(([k,v])=>`<tr><td>${esc(lab[k]||k)}</td><td><b>${v.caught}/${v.measured}</b>${v.unknown?` <span class="muted">(${v.unknown} no answer)</span>`:''}</td><td>${v.findings_total}</td></tr>`).join('') : '';
+  return $(`<div class="card"><div class="row"><span class="pill p-bad">${esc(a.verdict)}</span><b>PR description, quarantined</b> <span class="muted">(synthetic sample: the real branches have none)</span></div>
+    <p style="margin:8px 0">${a.chars} characters, ${a.invisible_chars} of them invisible. ${a.hidden.length} hidden or filter-evading payloads, ${a.imperatives.length} instruction-like phrases addressed to a reviewer. Shown here as data. <b>No model in this pipeline ever reads it</b>: the behavior changes, refusals and calibration above were computed from requirement + diff + executed tests only.</p>
+    <table><thead><tr><th>Payload</th><th>Decoded text</th></tr></thead><tbody>${pay}</tbody></table>
+    ${n?`<p style="margin:14px 0 6px"><b>Why it matters: a naive pipeline that gives the PR text to the reviewer.</b> Same model (${esc(n.model||'')}), same planted bugs (${n.mutants.map(esc).join(', ')}, each ${n.reps}×), only the PR text differs:</p>
+    <table><thead><tr><th>Reviewer input</th><th>Planted bugs caught</th><th>Findings</th></tr></thead><tbody>${nrows}</tbody></table>`:''}
+  </div>`);
 }
 
 function timeMachineCard(tm){

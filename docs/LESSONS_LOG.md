@@ -16,6 +16,20 @@ Evidence: <command / file / link>
 
 ---
 
+### L-17 — #2283: two of our hypotheses died on execution; a counterfactual run found the real drift (Sat 14 Nov 15:00 Helsinki)
+What happened: #2283 asks to stop an analyzer/generator crash on closed generic value types from a referenced assembly. The PR fixes it (`FirstOrDefault` / `GetPropertyIdentifierLocation`) **and** wraps TypeCollector's diagnostic callback so every diagnostic located outside this compilation is dropped (a global filter). We tried to prove what the filter costs a user:
+1. Hypothesis 1, "a non-generic referenced type's bad member loses its MsgPack003 warning": **refuted.** Neither base nor head reports anything; the analyzer never descends into non-generic referenced types. Kept as a fact test (`Fact_ReferencedNonGenericType_MembersAreNotAnalyzed`, placebo).
+2. Hypothesis 2, "a referenced closed generic loses MsgPack003": **refuted too**, and base crashes even on a fully keyed generic: the crash is broader than the issue's example.
+3. **Counterfactual:** re-run the PR head with *only* the filter line reverted (crash fix kept). Same user code (`Lib.Box<int>` with an unkeyed member): base = MsgPack004 *error* then AD0001 crash; head = nothing; head without filter = MsgPack004 errors, no crash. So the crash fix keeps a real error and the unrequested filter deletes it. And the agent's own test `ClosedGenericStruct_FromMetadataReference_UnkeyedMember` **fails without the filter**: it locks in the silence, not the fix.
+What we learned: a ledger shows *that* behavior changed between base and head; a counterfactual (head minus one hunk) shows *which hunk* caused it. That's how you prove scope drift instead of asserting it. And our own hypotheses are hearsay too: two of three were wrong, and only execution said so.
+What changed: `scripts/verify_2283_base.sh` (ledger + counterfactual), `receipts/2283/` (receipt + spec: 2 proven BCs, 2 refusals), record `counterfactual` block (inside the hash), scoreboard status *scope drift*.
+Evidence: `out/2283/verify/evidence/{base,head}/referenced-closed-generic-unkeyed.txt`, `out/2283/counterfactual/head-nofilter.trx` + `evidence/`.
+
+### L-18 — On a hand-written feature, the attention budget doesn't help: 28 files → 26 for the human (Sat 14 Nov 15:00 Helsinki)
+What happened: `et budget 2129` clears only 2 of 28 files (T4 outputs consistent); ~55 min of reading stays with the human. #2297's 237 → 9 came from 222 regenerated snapshots.
+What we learned: machine clearing is only as good as the mechanical share of a PR. The scoreboard says so instead of hiding #2129; it's the honest boundary of the method (a 28-file feature needs a real review, or a requirement split into smaller PRs).
+Evidence: `out/2129/budget.json`.
+
 ### L-16 — The human gets drilled too, and the first drill exposed a bias in our own questions (Sat 14 Nov 15:05 Helsinki)
 What happened: B3 adds one drill question to the #2234 page, built from planted mutant M04 (`break` for `continue` in the mixed-key skip). Its behavior was **executed**, not described: `EtDrillTests.Drill_MixedKeyInTheMiddle_LaterMembersStillSerialized` (class `First`/`Second("b")`/`Third`) passes on the PR head (formatter writes First + Third, array header 2) and fails with M04 planted (writes only First; Third is silently dropped). The test suite missed M04 (12/12 pass); Gemma caught it. The page says up front "1 of these 4 questions is a drill", numbers questions Q1–Q4 (no BC ids until reveal), and discloses the drill only after the human decides. `caught` = decision is needs-change or reject; a miss doesn't block signing but writes `MISSED DRILL` into `signoff.flags` and `human_calibration {drills, caught, results}` into the hashed record.
 What we learned:

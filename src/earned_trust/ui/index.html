@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipts scoreboard</title>
+<style>
+:root{
+  --bg:#f6f4ef; --paper:#fffdf8; --ink:#1c1b19; --muted:#6b675f; --line:#e2ddd2;
+  --accent:#2f5bd3; --ok:#1f7a4d; --ok-bg:#e3f3ea; --warn:#9a5b00; --warn-bg:#fbf0dc;
+  --bad:#b3261e; --bad-bg:#fbe6e4; --info-bg:#e8eefc; --code:#f1eee6;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151513; --paper:#1d1d1a; --ink:#ece9e1; --muted:#a19c91; --line:#34322d;
+    --accent:#7c9cff; --ok:#5fd19a; --ok-bg:#16301f; --warn:#f0b45a; --warn-bg:#33270f;
+    --bad:#ff8a80; --bad-bg:#3a1714; --info-bg:#1b2440; --code:#262521;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151513; --paper:#1d1d1a; --ink:#ece9e1; --muted:#a19c91; --line:#34322d;
+  --accent:#7c9cff; --ok:#5fd19a; --ok-bg:#16301f; --warn:#f0b45a; --warn-bg:#33270f;
+  --bad:#ff8a80; --bad-bg:#3a1714; --info-bg:#1b2440; --code:#262521;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 16px 80px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:12px}
+h1{font-size:22px;margin:0;letter-spacing:-.01em}
+h1 small{font-weight:400;color:var(--muted);font-size:14px;margin-left:8px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:32px 0 12px}
+.muted{color:var(--muted)} .mono{font-family:var(--mono);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:14px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.card h3{margin:0;font-size:17px}
+.truth{font-size:16px;margin:10px 0 12px;font-weight:600}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.num{background:var(--bg);border-radius:8px;padding:8px 10px}
+.num .n{font-size:20px;font-weight:700} .num .l{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;font:600 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.06em;padding:4px 7px;border-radius:999px;white-space:nowrap}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)}
+.p-bad{background:var(--bad-bg);color:var(--bad)} .p-info{background:var(--info-bg);color:var(--accent)} .p-mute{background:var(--code);color:var(--muted)}
+ul{margin:6px 0;padding-left:18px} li{margin:2px 0}
+a{color:var(--accent)}
+button.theme{font:inherit;font-size:13px;background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--ink);cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:14px} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600}
+@media (max-width:520px){ .nums{grid-template-columns:1fr 1fr} }
+</style>
+</head>
+<body><div class="wrap" id="app"></div>
+<script>
+const D = /*INDEX_JSON*/;
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pill = v => ({'proven-elsewhere':'<span class="pill p-warn">fixes something else</span>','regression':'<span class="pill p-bad">proven regression</span>',
+  'scope-drift':'<span class="pill p-bad">scope drift</span>','unreviewed':'<span class="pill p-mute">facts + budget only</span>',
+  'pending':'<span class="pill p-mute">receipt pending</span>'}[v]||`<span class="pill p-info">${esc(v)}</span>`);
+function counts(c){ return Object.entries(c||{}).map(([k,v])=>`${v} ${esc(k)}`).join(' · ')||'—'; }
+function card(p){
+  const b=p.budget, r=p.record;
+  const minutes = b ? `${b.human_minutes}<span class="muted" style="font-size:13px"> / ${b.naive_minutes} min</span>` : '—';
+  const files = b ? `${b.human}<span class="muted" style="font-size:13px"> / ${b.files}</span>` : p.files;
+  return `<div class="card">
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><h3>${esc(p.requirement.id)} <span class="muted" style="font-weight:400">${esc(p.requirement.title)}</span></h3>${pill(p.status)}</div>
+    <p class="truth">${esc(p.headline)}</p>
+    <div class="nums">
+      <div class="num"><div class="n">${files}</div><div class="l">files a human reads (of total)</div></div>
+      <div class="num"><div class="n">${minutes}</div><div class="l">human minutes (estimate) vs reading all</div></div>
+      <div class="num"><div class="n">${r?r.proven:'—'}</div><div class="l">proven behavior changes${r?` · ${r.refusals} refusals`:''}</div></div>
+    </div>
+    <p class="muted" style="margin:6px 0 2px">Ledger (base vs head, executed): ${counts(p.ledger)}</p>
+    ${p.notes&&p.notes.length?`<ul>${p.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}
+    <p style="margin:8px 0 0">${p.links.map(l=>`<a href="${esc(l.href)}">${esc(l.label)}</a>`).join(' · ')||'<span class="muted">no review page</span>'}</p>
+  </div>`;
+}
+document.getElementById('app').innerHTML = `<header><h1>Receipts, not reviews <small>4 agent-written PRs, one method</small></h1>
+  <button class="theme" onclick="toggleTheme()">theme</button></header>
+  <p class="muted">Every number below comes from an executed check (git, a build, a test run on base and head, a byte compare). Minutes are estimates (changed lines ÷ 20/min) and say so. Generated ${esc(D.generated_at)}.</p>
+  <h2>One line of truth per PR</h2>
+  <div class="grid">${D.prs.map(card).join('')}</div>
+  <h2>What the method measured across them</h2>
+  <div class="card"><table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody>
+  ${D.method.map(m=>`<tr><td>${esc(m[0])}</td><td>${esc(m[1])}</td></tr>`).join('')}</tbody></table></div>`;
+function toggleTheme(){ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark?'light':'dark'; }
+</script>
+</body></html>
