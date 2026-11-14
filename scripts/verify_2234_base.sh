@@ -22,7 +22,10 @@ PROJECTS=(
   "tests/MessagePack.SourceGenerator.Tests/MessagePack.SourceGenerator.Tests.csproj"
   "tests/MessagePack.SourceGenerator.ExecutionTests/MessagePack.SourceGenerator.ExecutionTests.csproj"
 )
-FILTER="FullyQualifiedName~SuppressSourceGenerationAnalyzerTests|FullyQualifiedName~SuppressedSourceGenerationTests"
+FILTER="FullyQualifiedName~SuppressSourceGenerationAnalyzerTests|FullyQualifiedName~SuppressedSourceGenerationTests|FullyQualifiedName~EtGeneratorReceiptsTests"
+# Reviewer-written catching tests (ours, not the agent's), injected into BOTH sides.
+RECEIPTS_DIR="$HERE/../receipts/2234"
+RECEIPTS_DEST="tests/MessagePack.SourceGenerator.Tests"
 
 mkdir -p "$OUT" "$WT_ROOT"
 OUT="$(cd "$OUT" && pwd)"
@@ -31,8 +34,13 @@ BRANCH="upstream/ju26-issue-2234"
 git rev-parse -q --verify "$BRANCH" >/dev/null || BRANCH="origin/ju26-issue-2234"
 
 fresh_worktree() {  # idempotent: remove an old worktree at the same path first
+  # On Windows, MSBuild/dotnet build-server nodes hold file locks, so `worktree remove`
+  # can unregister the tree but leave files behind; `worktree add` then fails (L-05).
+  dotnet build-server shutdown >/dev/null 2>&1 || true
   git worktree remove --force "$1" >/dev/null 2>&1 || true
-  git worktree add --detach "$1" "$2" >/dev/null
+  rm -rf "$1"
+  git worktree prune
+  git worktree add --detach "$1" "$2" >/dev/null || { echo "FATAL: worktree add $1 failed" >&2; exit 2; }
 }
 
 echo "== Worktree: base $BASE + only the agent's new test files =="
@@ -41,6 +49,11 @@ fresh_worktree "$WT_BASE" "$BASE"
 
 echo "== Worktree: PR head ($(git rev-parse --short "$BRANCH")) =="
 fresh_worktree "$WT_HEAD" "$BRANCH"
+
+echo "== Injecting reviewer receipts from receipts/2234 into both worktrees =="
+for wt in "$WT_BASE" "$WT_HEAD"; do
+  cp "$RECEIPTS_DIR"/*.cs "$wt/$RECEIPTS_DEST/"
+done
 
 # The repo pins SDK 8.0.402 (Roslyn 4.11) but compiles its generator against Roslyn 4.12,
 # so under the pinned SDK the generator silently fails to load (warning CS9057) and the
@@ -59,7 +72,7 @@ run() {
   echo "########## $label ##########"
   for proj in "${PROJECTS[@]}"; do
     local name; name="$(basename "$proj" .csproj)"
-    ( cd "$dir" && dotnet test "$proj" --filter "$FILTER" \
+    ( cd "$dir" && ET_EVIDENCE_DIR="$OUT/evidence/$label" dotnet test "$proj" --filter "$FILTER" \
         --logger "trx;LogFileName=$OUT/$label-$name.trx" \
         --logger "console;verbosity=normal" > "$OUT/$label-$name.log" 2>&1 )
     echo "-- $name (exit $?)"

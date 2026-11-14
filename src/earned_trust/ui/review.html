@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipts, not reviews</title>
+<style>
+:root{
+  --bg:#f6f4ef; --paper:#fffdf8; --ink:#1c1b19; --muted:#6b675f; --line:#e2ddd2;
+  --accent:#2f5bd3; --ok:#1f7a4d; --ok-bg:#e3f3ea; --warn:#9a5b00; --warn-bg:#fbf0dc;
+  --bad:#b3261e; --bad-bg:#fbe6e4; --info-bg:#e8eefc; --code:#f1eee6;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151513; --paper:#1d1d1a; --ink:#ece9e1; --muted:#a19c91; --line:#34322d;
+    --accent:#7c9cff; --ok:#5fd19a; --ok-bg:#16301f; --warn:#f0b45a; --warn-bg:#33270f;
+    --bad:#ff8a80; --bad-bg:#3a1714; --info-bg:#1b2440; --code:#262521;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151513; --paper:#1d1d1a; --ink:#ece9e1; --muted:#a19c91; --line:#34322d;
+  --accent:#7c9cff; --ok:#5fd19a; --ok-bg:#16301f; --warn:#f0b45a; --warn-bg:#33270f;
+  --bad:#ff8a80; --bad-bg:#3a1714; --info-bg:#1b2440; --code:#262521;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 80px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:12px}
+h1{font-size:22px;margin:0;letter-spacing:-.01em}
+h1 small{font-weight:400;color:var(--muted);font-size:14px;margin-left:8px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:36px 0 12px}
+h3{font-size:17px;margin:0 0 6px}
+.mono{font-family:var(--mono);font-size:13px}
+.muted{color:var(--muted)}
+.req{margin:16px 0 4px;font-size:16px}
+.req a{color:var(--accent)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.stat .n{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.stat .l{color:var(--muted);font-size:13px}
+.pill{display:inline-block;font:600 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.06em;padding:4px 7px;border-radius:999px;white-space:nowrap}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .p-warn{background:var(--warn-bg);color:var(--warn)}
+.p-bad{background:var(--bad-bg);color:var(--bad)} .p-info{background:var(--info-bg);color:var(--accent)}
+.p-mute{background:var(--code);color:var(--muted)}
+pre{background:var(--code);border-radius:8px;padding:10px 12px;overflow:auto;font:12.5px/1.45 var(--mono);margin:8px 0;max-height:340px}
+.opts{display:grid;gap:8px;margin:12px 0}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--paper)}
+.opt:hover{border-color:var(--accent)}
+.opt input{margin-top:3px}
+.opt.locked{cursor:default;opacity:.75}
+.opt.chosen{border-color:var(--accent);outline:1px solid var(--accent);opacity:1}
+.opt.truth{border-color:var(--ok);outline:2px solid var(--ok);opacity:1}
+button{font:600 14px var(--sans);border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--ink);color:var(--paper)}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.35;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.reveal{border-top:1px dashed var(--line);margin-top:14px;padding-top:14px}
+.banner{border-radius:8px;padding:10px 12px;font-weight:600;margin-bottom:10px}
+.b-match{background:var(--ok-bg);color:var(--ok)} .b-miss{background:var(--bad-bg);color:var(--bad)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+td,th{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.tname{font-family:var(--mono);font-size:12px;word-break:break-all}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:720px){.two{grid-template-columns:1fr}}
+.hash{font-family:var(--mono);font-size:11.5px;color:var(--muted);word-break:break-all}
+input[type=text],textarea{width:100%;font:14px var(--sans);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
+textarea{min-height:64px}
+label.f{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.05em}
+details summary{cursor:pointer;color:var(--accent)}
+ul.tight{margin:6px 0;padding-left:20px} ul.tight li{margin:3px 0}
+.refusal{border-left:4px solid var(--warn);}
+.signed{border:2px solid var(--ok)}
+.quote{border-left:3px solid var(--line);padding-left:10px;font-style:italic;color:var(--muted)}
+.theme{background:transparent;color:var(--muted);border:1px solid var(--line);padding:4px 8px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script id="record" type="application/json">/*RECORD_JSON*/</script>
+<script>
+const R = JSON.parse(document.getElementById('record').textContent);
+const S = { answers:{}, decisions:{}, notes:{} };
+const $ = (h)=>{const t=document.createElement('template');t.innerHTML=h.trim();return t.content.firstChild;};
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function sha256(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+const canon = o => JSON.stringify(o, Object.keys(flatKeys(o)).sort());
+function flatKeys(o,acc={}){ if(o&&typeof o==='object'){ for(const k of Object.keys(o)){acc[k]=1;flatKeys(o[k],acc);} } return acc; }
+
+const verdictPill = v => ({catching:'<span class="pill p-ok">catching</span>',placebo:'<span class="pill p-mute">placebo</span>',
+  'broken-by-pr':'<span class="pill p-bad">broken by PR</span>',unknown:'<span class="pill p-warn">unknown</span>'}[v]||`<span class="pill p-warn">${esc(v)}</span>`);
+const linkPill = v => ({intended:'<span class="pill p-ok">intended</span>',collateral:'<span class="pill p-warn">collateral</span>',
+  unexplained:'<span class="pill p-bad">unexplained</span>'}[v]);
+const claimPill = v => ({'not-supported':'<span class="pill p-bad">not supported</span>','true-but-not-new':'<span class="pill p-warn">true, not new</span>',
+  misleading:'<span class="pill p-warn">misleading</span>',unverified:'<span class="pill p-mute">unverified</span>',supported:'<span class="pill p-ok">supported</span>'}[v]||esc(v));
+const outcome = o => o==='Passed'?'<span class="pill p-ok">pass</span>':o==='Failed'?'<span class="pill p-bad">fail</span>':`<span class="pill p-warn">${esc(o)}</span>`;
+
+function render(){
+  const app = document.getElementById('app'); app.innerHTML='';
+  const a = R.ledger_counts.agent_tests, rv = R.ledger_counts.reviewer_tests;
+  const agentTotal = Object.values(a).reduce((x,y)=>x+y,0);
+  const rc = R.regression_check;
+  app.append($(`<header>
+    <h1>Receipts, not reviews <small>Prove · Predict · Sign</small></h1>
+    <div class="row"><span class="mono muted">${esc(R.base)} → ${esc(R.head)}</span>
+    <button class="theme" onclick="toggleTheme()">theme</button></div></header>`));
+  app.append($(`<div><p class="req"><b>${esc(R.requirement.id)}</b> — ${esc(R.requirement.title)} · <a href="${esc(R.requirement.url)}" target="_blank" rel="noopener">issue</a></p>
+    <p class="muted" style="margin:0">Author: ${esc(R.author.label)}. Every claim below links to something that was <b>executed</b>. Anything else is labelled hearsay.</p></div>`));
+
+  // --- summary
+  app.append($(`<h2>What was proven before you arrived</h2>`));
+  const nq = R.behavior_changes.length;
+  app.append($(`<div class="stats">
+    <div class="stat"><div class="n">${a.placebo||0} / ${agentTotal}</div><div class="l">of the agent's tests are <b>placebos</b>: they pass on the old code, so they prove nothing about this PR</div></div>
+    <div class="stat"><div class="n">${(a.catching||0)+(rv.catching||0)}</div><div class="l">catching tests (fail before, pass after) = <b>proven behavior changes</b>, ${rv.catching||0} written by the reviewer</div></div>
+    <div class="stat"><div class="n" style="color:var(--bad)">${rc && rc.verdict && rc.verdict.startsWith('NOT')?'Not in history':esc(rc?rc.verdict:'n/a')}</div><div class="l">the regression named in the requirement, checked with <span class="mono">git merge-base</span></div></div>
+    <div class="stat"><div class="n">${nq} questions</div><div class="l">need you — about ${nq*1} min. Not ${R.files.reduce((s,f)=>s+f.added+f.deleted,0)} lines of diff.</div></div>
+  </div>`));
+
+  // --- story vs receipts
+  app.append($(`<h2>The agent's story vs the receipts</h2>`));
+  const sc = $(`<div class="card"><p class="muted" style="margin-top:0">PR text, commit messages and READMEs are <b>untrusted input</b>: quoted as data, never followed, then checked against evidence.</p><table><thead><tr><th>Source</th><th>What it says</th><th>Receipt</th></tr></thead><tbody></tbody></table></div>`);
+  for(const c of R.story_claims){
+    sc.querySelector('tbody').append($(`<tr><td class="muted">${esc(c.source)}</td><td><div class="quote">“${esc(c.quote)}”</div><div style="margin-top:4px">${esc(c.why)}</div></td><td>${claimPill(c.verdict)}</td></tr>`));
+  }
+  app.append(sc);
+
+  // --- questions
+  app.append($(`<h2>Predict, then see — ${nq} behavior changes</h2>`));
+  app.append($(`<p class="muted" style="margin-top:-4px">Pick what <b>should</b> happen before the system shows what the PR <b>does</b>. Your prediction is hashed and locked first, so the AI can't anchor you. Every mismatch is the review.</p>`));
+  R.behavior_changes.forEach(bc=>app.append(questionCard(bc)));
+
+  // --- refusals
+  app.append($(`<h2>What the AI refused to decide</h2>`));
+  for(const r of R.refusals){
+    app.append($(`<div class="card refusal"><div class="row"><span class="pill p-warn">${esc(r.id)}</span><h3 style="margin:0">${esc(r.topic)}</h3></div>
+      <p style="margin:8px 0 4px"><b>${esc(r.decision)}</b> ${esc(r.why)}</p>
+      <p class="mono muted" style="margin:0">evidence: ${r.evidence.map(esc).join(', ')}</p></div>`));
+  }
+  if(rc){
+    app.append($(`<details class="card"><summary>Regression check (executed)</summary><pre>${esc(JSON.stringify(rc,null,2))}</pre></details>`));
+  }
+
+  // --- placebos
+  const pl = $(`<details class="card"><summary>${R.placebo_tests.length} placebo tests (pass on base and head)</summary><table><thead><tr><th>Test</th><th>Base</th><th>Head</th></tr></thead><tbody></tbody></table></details>`);
+  R.placebo_tests.forEach(t=>pl.querySelector('tbody').append($(`<tr><td class="tname">${esc(t.test)}</td><td>${outcome(t.base)}</td><td>${outcome(t.head)}</td></tr>`)));
+  app.append(pl);
+
+  // --- calibration
+  app.append($(`<h2>How far to trust the AI reviewer</h2>`));
+  const cal = R.calibration;
+  app.append($(`<div class="card">${cal.status==='not-measured'
+    ? `<span class="pill p-warn">uncalibrated</span> ${esc(cal.note)}`
+    : `<div class="row"><span class="pill p-info">measured</span><b>${cal.caught}/${cal.planted}</b> planted bugs caught on this PR</div><p class="muted">${esc(cal.note||'')}</p>`}</div>`));
+
+  app.append(signPanel());
+}
+
+function questionCard(bc){
+  const q = bc.question, id = bc.id;
+  const el = $(`<div class="card" id="q-${id}">
+    <div class="row" style="justify-content:space-between"><div class="row"><span class="pill p-info">${esc(id)}</span>${linkPill(bc.requirement_link)}
+      ${bc.status==='proven'?'<span class="pill p-ok">proven</span>':'<span class="pill p-bad">unproven · hearsay</span>'}</div></div>
+    <p style="margin:10px 0 0"><b>${esc(q.prompt)}</b></p>
+    <pre>${esc(q.context)}</pre>
+    <div class="opts"></div>
+    <div class="row"><button data-act="commit" disabled>Lock prediction &amp; reveal</button><span class="hash" data-hash></span></div>
+    <div class="reveal" hidden></div></div>`);
+  const opts = el.querySelector('.opts');
+  q.options.forEach(o=>{
+    const lab = $(`<label class="opt"><input type="radio" name="o-${id}" value="${esc(o.id)}"><span><b>${esc(o.id)}.</b> ${esc(o.text)}</span></label>`);
+    lab.querySelector('input').onchange = ()=>{ el.querySelector('[data-act=commit]').disabled=false; };
+    opts.append(lab);
+  });
+  el.querySelector('[data-act=commit]').onclick = async ()=>{
+    const pick = el.querySelector(`input[name=o-${id}]:checked`).value;
+    const at = new Date().toISOString();
+    const h = await sha256(`${id}|${pick}|${at}`);
+    S.answers[id] = {prediction:pick, committed_at:at, commit_sha256:h, revealed:q.revealed, match: pick===q.revealed};
+    el.querySelector('[data-hash]').textContent = `locked ${at.slice(11,19)} · sha256 ${h.slice(0,16)}…`;
+    el.querySelectorAll('.opt').forEach(l=>{ l.classList.add('locked'); const i=l.querySelector('input'); i.disabled=true;
+      if(i.value===pick) l.classList.add('chosen'); if(i.value===q.revealed) l.classList.add('truth'); });
+    el.querySelector('[data-act=commit]').remove();
+    showReveal(el, bc);
+  };
+  return el;
+}
+
+function showReveal(el, bc){
+  const ans = S.answers[bc.id], q = bc.question, rv = el.querySelector('.reveal');
+  rv.hidden = false;
+  rv.append($(`<div class="banner ${ans.match?'b-match':'b-miss'}">${ans.match
+    ? '✓ Your prediction matches what the PR does: accepted with evidence.'
+    : '✗ Mismatch: the PR does something you didn\'t expect. This is the review.'}</div>`));
+  rv.append($(`<p style="margin:0 0 8px"><b>What the PR does:</b> ${esc(q.reveal_text)}</p>`));
+  rv.append($(`<p class="muted" style="margin:0 0 8px">${esc(bc.link_why)}</p>`));
+  const t = $(`<table><thead><tr><th>Receipt (test)</th><th>Base</th><th>Head</th><th></th></tr></thead><tbody></tbody></table>`);
+  bc.evidence.forEach(e=>t.querySelector('tbody').append($(`<tr><td class="tname">${esc(e.ledger_id)} ${esc(e.test)}${e.signal?`<div class="muted" style="font-family:var(--sans)">${esc(e.signal)}</div>`:''}</td><td>${outcome(e.base)}</td><td>${outcome(e.head)}</td><td>${verdictPill(e.verdict)}</td></tr>`)));
+  rv.append(t);
+  for(const [name, sides] of Object.entries(bc.generated_output||{})){
+    rv.append($(`<details style="margin-top:8px"><summary>Generator output: ${esc(name)} (base vs head)</summary><div class="two">
+      <div><div class="muted">base</div><pre>${esc(sides.base||'(none)')}</pre></div>
+      <div><div class="muted">head</div><pre>${esc(sides.head||'(none)')}</pre></div></div></details>`));
+  }
+  const d = $(`<div style="margin-top:12px"><label class="f">Your decision on ${esc(bc.id)}</label>
+    <div class="row"><button class="ghost" data-d="accept">Accept</button><button class="ghost" data-d="needs-change">Needs change</button><button class="ghost" data-d="reject">Reject</button></div>
+    <label class="f">Why (one line, goes in the record)</label><input type="text" data-note placeholder="${ans.match?'e.g. expected behavior, covered by tests':'e.g. dropping a member silently is a contract change; ask the author to fail instead'}"></div>`);
+  d.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ S.decisions[bc.id]=b.dataset.d;
+    d.querySelectorAll('[data-d]').forEach(x=>{x.style.background='';x.style.color='';});
+    b.style.background='var(--ink)'; b.style.color='var(--paper)'; refreshSign(); });
+  d.querySelector('[data-note]').oninput = e => { S.notes[bc.id]=e.target.value; };
+  rv.append(d);
+  refreshSign();
+}
+
+function signPanel(){
+  const el = $(`<div id="sign"><h2>Sign — what you own</h2><div class="card">
+    <div class="two"><div><b>What was checked, and by what</b><ul class="tight">${R.checked.map(c=>`<li>${esc(c)}</li>`).join('')}</ul></div>
+    <div><b>What was NOT checked, and why</b><ul class="tight">${R.not_checked.map(c=>`<li>${esc(c)}</li>`).join('')}</ul></div></div>
+    ${R.hearsay.length?`<p><span class="pill p-bad">hearsay</span> ${R.hearsay.map(esc).join('<br>')}</p>`:''}
+    <label class="f">Residual risk you accept (required)</label><textarea data-risk placeholder="e.g. Generated formatter not round-tripped at runtime; accepted because MsgPack005 is an error by default."></textarea>
+    <div class="two"><div><label class="f">Your name</label><input type="text" data-name placeholder="Named engineer"></div>
+    <div><label class="f">Role</label><input type="text" data-role placeholder="e.g. code owner, MessagePack.SourceGenerator"></div></div>
+    <p class="muted" data-why style="margin:12px 0 8px"></p>
+    <div class="row"><button data-act="sign" disabled>Sign review record</button></div>
+    <div data-out></div></div></div>`);
+  el.querySelectorAll('textarea,input').forEach(i=>i.oninput=refreshSign);
+  el.querySelector('[data-act=sign]').onclick = doSign;
+  return el;
+}
+
+function refreshSign(){
+  const el = document.getElementById('sign'); if(!el) return;
+  const missing = [];
+  R.behavior_changes.forEach(bc=>{ if(!S.answers[bc.id]) missing.push(`predict ${bc.id}`); else if(!S.decisions[bc.id]) missing.push(`decide ${bc.id}`); });
+  if(!el.querySelector('[data-risk]').value.trim()) missing.push('state residual risk');
+  if(!el.querySelector('[data-name]').value.trim()) missing.push('your name');
+  el.querySelector('[data-why]').textContent = missing.length ? 'Still needed: '+missing.join(' · ') : 'Ready. Signing hashes the full record, including what you predicted before each reveal.';
+  el.querySelector('[data-act=sign]').disabled = missing.length>0;
+}
+
+async function doSign(){
+  const el = document.getElementById('sign');
+  const rec = JSON.parse(JSON.stringify(R));
+  rec.behavior_changes.forEach(bc=>{ const a=S.answers[bc.id];
+    Object.assign(bc,{human_prediction:a.prediction, prediction_committed_at:a.committed_at, prediction_commit_sha256:a.commit_sha256,
+      revealed_behavior:a.revealed, match:a.match, decision:S.decisions[bc.id], rationale:S.notes[bc.id]||''}); });
+  rec.signoff = { name: el.querySelector('[data-name]').value.trim(), role: el.querySelector('[data-role]').value.trim(),
+    timestamp: new Date().toISOString(), residual_risk: el.querySelector('[data-risk]').value.trim(),
+    statement: 'I predicted each behavior before it was revealed, reviewed the receipts listed, and accept the decisions and residual risk above. The AI review is advice with evidence, not the approval.',
+    mismatches: rec.behavior_changes.filter(b=>!b.match).map(b=>b.id) };
+  const body = canon(rec);
+  rec.record_sha256 = await sha256(body);
+  const blob = new Blob([JSON.stringify(rec,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const fname = `review-${R.requirement.id.replace('#','')}-${rec.record_sha256.slice(0,8)}.json`;
+  el.querySelector('.card').classList.add('signed');
+  el.querySelector('[data-out]').innerHTML = `<p style="margin-top:14px"><span class="pill p-ok">signed</span> by <b>${esc(rec.signoff.name)}</b> · ${esc(rec.signoff.timestamp)}</p>
+    <p class="hash">record sha256 ${rec.record_sha256}</p>
+    <p>${rec.signoff.mismatches.length} mismatch(es) caught by prediction: ${rec.signoff.mismatches.join(', ')||'none'}</p>
+    <a href="${url}" download="${fname}"><button>Download signed record</button></a>`;
+  el.querySelector('[data-act=sign]').disabled = true;
+  if (window.ET_SUBMIT) window.ET_SUBMIT(rec);
+}
+
+function toggleTheme(){ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark?'light':'dark'; }
+render();
+</script>
+</body>
+</html>

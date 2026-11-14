@@ -13,6 +13,24 @@ Evidence: <command / file / link>
 
 ---
 
+### L-07 — Our own receipts prove the change the agent never mentioned (Sat 14 Nov ~08:30)
+What happened: we wrote 4 reviewer-side catching tests (`receipts/2234/EtGeneratorReceiptsTests.cs`) that run the *source generator* (not the analyzer) on duplicate/mixed keys and save its output. All 4 fail on base and pass on head. On base the generator throws (`ArgumentException … Key: 0`, `InvalidOperationException: Nullable object must have a value`). On head it emits a formatter that writes and reads only `First`; `Second` is gone from both `Serialize` and `Deserialize`.
+What we learned: the agent's tests only cover the analyzer. The PR's biggest user-visible effect — a generated formatter that silently drops a member when MsgPack005 is downgraded — has no test, no README line and no commit text. Only reviewer-written tests found it.
+What changed: BC-2 ("first duplicate wins, silently") becomes the headline predict-then-reveal question. The reviewer must write its own tests; the author's tests describe what the author *thought* about.
+Evidence: `out/2234/verify/evidence/{base,head}/dup-int.txt`; `uv run et prove 2234`.
+
+### L-06 — The hearsay guard caught *our* spec (Sat 14 Nov ~08:20)
+What happened: the first `et record` marked BC-2 and BC-3 as "unproven · hearsay" although the tests had passed. Cause: xUnit/TRX names our tests with their namespace, so the spec's test names didn't match ledger entries. The record builder refuses to mark a change proven unless every cited test is found *and* catching.
+What we learned: the rule "a claim without a matching receipt is hearsay" applies to the reviewer's own claims too, and it works — it failed closed, not open.
+What changed: `prove.short_name` normalizes test names to `Class.Method`.
+Evidence: first run output `3 behavior changes (1 proven), 2 refusals, 2 hearsay`.
+
+### L-05 — The evidence harness can silently run on an empty tree (Sat 14 Nov ~08:00)
+What happened: on rerun, `git worktree remove --force` unregistered the worktrees but Windows file locks (MSBuild / build-server nodes) left files behind; `git worktree add` then failed, the script carried on, and `dotnet test` ran in a directory with only our injected files → NuGet restore errors on both sides.
+What we learned: a harness failure looks like "tests failed on both sides". Because "didn't run" maps to *unknown* (F-15), no false catching test was produced — but a naive base-fail/head-pass reader could have been fooled if only one side broke.
+What changed: `fresh_worktree` shuts down build servers, deletes leftovers, prunes, and aborts if `worktree add` fails.
+Evidence: `out/verify_2234_run.log` (first rerun): `fatal: 'D:/msgpack-wt/2234-head' already exists`.
+
 ### L-04 — The repo's own toolchain pin silently disables its source generator (Sat 14 Nov ~07:00)
 What happened: `global.json` pins SDK 8.0.402 (Roslyn 4.11), but the generator is compiled against Roslyn 4.12. Under the pinned SDK the compiler skips the generator with **warning** CS9057, so `MessagePack.SourceGenerator.ExecutionTests` fails to compile (CS0117 `GeneratedMessagePackResolver.Instance` missing) on base *and* every PR — including pre-existing tests.
 What we learned: "CI is green" depends on which SDK CI really uses; a warning can turn a whole test project into dead weight. Evidence must record the toolchain it ran on.

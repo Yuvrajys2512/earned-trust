@@ -1,18 +1,27 @@
 # 07 — Tech challenges (partner prizes)
 
-Junction says tech challenges "run across every track, so any team can take them on alongside their track" — no stated cap. Prizes are usually for **best use**, so only integrate where the partner tech is load-bearing.
+Rule: integrate a partner only where it is **load-bearing** in the concept (judges reward "best use", not logos). Tiers set by the owner on Sat 14 Nov.
 
-Partners listed on 2026.hackjunction.com: OpenAI Codex, NVIDIA, Featherless, Modal, Qualia, CRACI, Atech.dev, Scailab, IronShard, Cloudinary, Wendy, Aiven, Oxylabs.
+## Tier A — we build these anyway
 
-| Partner | Fit | How it's load-bearing in our concept | Status |
+| Partner | Prize | Role in *Receipts, not reviews* | What their judges need | Status |
+| --- | --- | --- | --- | --- |
+| **OpenAI Codex** | $10k/$5k/$2.5k credits | Build agent for this repo **and** the *author agent* whose PRs we review (author ≠ reviewer family, P-reviewer≠author) | Meaningful use while building; claim $100/participant | TODO |
+| **NVIDIA Nemotron** | 2× RTX 5080 | **The reviewer model.** Must be *Nemotron 3.5 Super VL*. Submission text: what the model does + how we improved outputs → planted-bug catch rate before/after prompt changes (25% of score = quality improved through evaluation) | Short text in submission form | TODO |
+| **Modal** | $2k cash + $3k credits | Sandboxes run untrusted agent code: base/head catching tests + mutants in parallel. `modal deploy` the review UI → live URL (demo = 15%) | Live deployed URL. Credit code `VVX-2QX-8HW` | TODO |
+
+## Tier B — ~1 h each, genuinely part of the system
+
+| Partner | Prize | Role | Status |
 | --- | --- | --- | --- |
-| OpenAI Codex | Strong | Codex as the *author agent* whose PRs we review, or as test generator. Story: "how to trust coding agents" | TODO: read brief |
-| NVIDIA (Nemotron) | Strong | Reviewer model; open weights → self-hostable, code never leaves the company (enterprise argument) | TODO: read brief |
-| Modal | Strong | Sandboxed, parallel runs of tests on base vs PR and mutant runs | TODO: read brief |
-| Featherless | Good | Second model family as independent reviewer (counters self-preference bias) | TODO: read brief |
-| Aiven | Cheap add | Postgres for review records / decision log | TODO: read brief |
-| Cloudinary | Better for Blueprints track | — | skip here |
-| Oxylabs | Weak | GitHub API already gives issue text | skip |
-| Qualia, CRACI, Atech.dev, Scailab, IronShard, Wendy | Unknown | Paste their briefs here and re-evaluate | TODO |
+| **Entire** (MLH) | projector | Record author-agent sessions (Sessions); publish the review record as a **Trail** (agent reviews whether change matches intent); use Graph + Brain where possible. mlh.link/junction-26 | TODO |
+| **Gemma** | €1,000 ×3 | Second, independent reviewer from a different family (counters self-preference, F-09); run on Modal | TODO |
+| **Aiven** | €1k/€750/€500 | Postgres: signed review records + reviewer track record across PRs → trust is *earned per area* and withdrawn after escapes | TODO |
 
-Rule: wire partners in Round 4 unless one is needed earlier (e.g. Modal if local .NET is too slow).
+## Tier C — only if ahead
+
+| Partner | Role |
+| --- | --- |
+| CRACI | CI `runs-on: craci`; pull the PR build's SBOM into the record as supply-chain evidence (security part of the brief). Invite code in #craci |
+| Verda | Hosted Nemotron endpoint → "agent code never leaves EU infrastructure". Must document process + post summary in their Discord |
+| Gemini API | Could generate catching tests; most crowded — skip |

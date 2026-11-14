@@ -4,6 +4,10 @@ Format: newest first. One line of decision, one line of why. Times Helsinki.
 
 | When | Decision | Why |
 | --- | --- | --- |
+| Sat 14 Nov ~08:40 | Record builder **fails closed**: a behavior change is `proven` only if every cited test is in the ledger and `catching`; story claims marked "true but not new" are re-checked (cited tests must be placebos) | The spec is claims; only the ledger is receipts. Caught our own bug in L-06 |
+| Sat 14 Nov ~08:30 | Review UI is one self-contained HTML file with the record embedded; prediction is SHA-256-committed (id, choice, time) before the reveal; Sign is locked until every BC is predicted + decided and residual risk + name are filled | Works offline, deployable anywhere (Modal later); commit-before-reveal makes P5 checkable, not a promise |
+| Sat 14 Nov ~08:15 | Reviewer-written catching tests live in `receipts/<pr>/` and are injected into both worktrees; the generator test writes its output to `$ET_EVIDENCE_DIR` so the reveal shows real generated code | Reviewer ≠ author tests (F-16); the reveal shows the actual artifact, not a description |
+| Sat 14 Nov ~08:10 | v0 reviewer spec (`receipts/2234/review.json`) is human-curated and labelled so; a model generates it in Round 2 | Get the end-to-end flow demoable first; the spec format is the contract the model must fill |
 | Sat 14 Nov ~07:30 | Concept name: **Receipts, not reviews** (pipeline tagline: *Prove · Predict · Sign*) | Says the core idea in three words: executed evidence instead of opinions. The 2234 placebo-test finding (6/10 tests have no receipt) shows it on real data |
 | Sat 14 Nov ~06:30 | `git_facts` classifies T4 outputs by checking a sibling `.tt` exists in the head tree, not by folder | First version put `TransformUtilities.cs` (hand-written, in `Transforms/`) in the auto-clearable bucket — exactly the file a human must see |
 | Sat 14 Nov ~06:30 | Regression archaeology is generic: requirement may carry `regressed_between=(good, bad)`; we check ancestry of `bad` and of every `good..bad` commit touching the PR's src files | Turns the one-off 2234 finding into a reusable Scope-stage check with executed evidence |

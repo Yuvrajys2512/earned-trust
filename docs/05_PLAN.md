@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** Round 0 done; concept named *Receipts, not reviews* → starting Round 1. 2234 verified: 6/10 agent tests are placebos, 4 prove an unrequested analyzer-crash fix (L-03). `uv run et facts all` works. (Update this line after every round.)
+**Now:** Round 1 done (Sat ~09:00): `et facts → et prove → et record` builds `out/2234/record.json` + `review.html` (predict → reveal → sign). 8 catching (4 agent + 4 ours), 6 placebo, 3 BCs, 2 refusals. Next: Round 2 — reviewer model + planted-bug calibration (needs API keys). (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 
@@ -16,10 +16,10 @@ Rule: **every round ends in something demoable**, even if hardcoded. Rounds 1–
 
 ## Round 1 — Thin slice on #2234, end to end (Sat morning → ~13:00)
 - [x] `git_facts`: file classes + the regression-ancestry check for 2234 (`uv run et facts all`)
-- [ ] Turn verify script into `et prove`: per-test base/head outcome → ledger (placebo / catching), parsed from TRX
-- [ ] Write our *own* catching tests for 2234 beyond the agent's: generator output when MsgPack005 is suppressed (first-wins vs crash)
-- [ ] Produce `out/2234/record.json` with ≥1 proven behavior change, ≥1 refusal
-- [ ] Minimal HTML: question → human types prediction → reveal → sign → record saved
+- [x] Turn verify script into `et prove`: per-test base/head outcome → ledger (placebo / catching), parsed from TRX
+- [x] Write our *own* catching tests for 2234 beyond the agent's: generator output when MsgPack005 is suppressed (first-wins vs crash)
+- [x] Produce `out/2234/record.json` with ≥1 proven behavior change, ≥1 refusal
+- [x] Minimal HTML: question → human types prediction → reveal → sign → record saved
 - **Exit:** full flow runs on 2234. You now have a submission.
 
 ## Round 2 — Measure the reviewer (Sat ~13:00 → ~18:00)

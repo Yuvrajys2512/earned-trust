@@ -19,5 +19,8 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | F-13 | Wrong requirement, real fix: PR fixes a genuine bug that isn't the one in the issue | seen | #2234: fixes analyzer crash (AD0001) on duplicate/mixed keys, not the 3.1.1 suppression regression | Record links each proven change to the requirement separately; "real but unrequested" goes to the human |
 | F-14 | Test names are story: name claims a topic its assertions don't test | seen | `SuppressSourceGenerationAnalyzerTests` catching tests are about duplicate keys | Judge tests by base/head outcome, never by name |
 | F-15 | Toolchain pin silently disables code generation; whole test project can't compile | seen | `global.json` SDK 8.0.402 + Roslyn 4.12 generator → CS9057 warning (L-04) | Record toolchain per run; treat "didn't compile" as *unknown*, never *pass* |
+| F-16 | Author tests only cover what the author thought about; biggest effect untested | seen | #2234: agent tests cover the analyzer; the generator's silent member drop is untested (L-07) | Reviewer writes its own catching tests from the diff, not from the author's tests |
+| F-17 | Evidence harness fails silently (empty worktree) and looks like test failures | seen | L-05 | Harness aborts on setup failure; "didn't run" = unknown |
+| F-18 | Reviewer's own claims don't match evidence (name mismatch) | seen | L-06 | Record builder fails closed: unmatched claim → hearsay |
 
 Add rows as the build surfaces new ones (especially failures of *our own* reviewer).
