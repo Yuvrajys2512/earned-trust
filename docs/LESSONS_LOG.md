@@ -32,6 +32,8 @@ Deliverable. Log every surprise, dead end and insight as it happens — short, d
 - L-24 Dry run on the live URL; a deploy isn't live the second it says so
 - L-25 A count-up animation can lie in a freeze-frame (UI pass)
 - L-26 The live site served the previous deploy to returning browsers (1970 Last-Modified → 304)
+- L-27 Rebuilding one input after signing broke the attestation, and `et verify` caught it
+- L-28 The risk router's first verdict: our own main demo PR needs a full read (circuit breaker)
 
 ---
 
@@ -45,6 +47,18 @@ Evidence: <command / file / link>
 ```
 
 ---
+
+### L-28 — The risk router's first verdict: our own main demo PR needs a full read (Sun 15 Nov ~00:15 Helsinki)
+What happened: we expected the router to put #2234 in T2 (predict-then-reveal) and only #2129 in T3. It put **#2234 and #2283 in T3** too: both change `TypeCollector.cs`, whose trust the ledger withdrew after the `1a74a620` escape. Without that rule both would be T2. The full read is small, though: 1 file, 22 changed lines on #2234 (29 on #2283); the other 3 files are T1 skims.
+What we learned: the circuit breaker only means something if it can overrule the demo we'd prefer to show. Showing "T2 without the circuit breaker" next to the tier keeps the reason visible instead of hiding it in a score. And T3 doesn't mean "read 266 lines": lanes keep the full read to the region that earned it.
+What changed: `tier.json` carries `tier_without_circuit_breaker` and per-lane file/line counts; the review page, scoreboard, card and walkthrough say it.
+Evidence: `uv run et tier all` → `out/2234/tier.json` (`tier: T3`, `tier_without_circuit_breaker: T2`, lane T3 = `TypeCollector.cs`, 22 lines); `out/trust.json` (TypeCollector.cs `withdrawn`).
+
+### L-27 — Rebuilding one input after signing broke the attestation, and `et verify` caught it (Sun 15 Nov ~00:13 Helsinki)
+What happened: to show the tier on the budget pages we re-ran `et budget 2297` **after** `et attest 2297`. The budget numbers didn't change (checked: identical except `tier` and `generated_at`), but the file's bytes did, and `budget.json` is one of #2297's hashed evidence files. `et verify 2297` → **INVALID** (`12 evidence files re-hashed: changed or missing: ['out/2297/budget.json']`). The INVALID build had already been deployed for a few minutes.
+What we learned: the tamper check works on our own mistakes too, and "same numbers" is not "same evidence". Rebuild order is part of the method: inputs (trust → tier → budget) first, then record → attest → verify, then publish. Verify must run before every deploy, not after.
+What changed: re-recorded and re-attested #2297 (VALID ×3), redeployed; the live #2297 attestation verifies with stock `ssh-keygen`. HANDOFF §6 and README now list `et tier all` and `et budget` before the record/attest loop.
+Evidence: `uv run et verify 2297` (INVALID, then VALID after `et record 2297 && et attest 2297`); live: `ssh-keygen -Y verify … -s statement.json.sig < statement.json` → `Good "earned-trust-review" signature`.
 
 ### L-26 — The live site served the previous deploy to returning browsers (Sat 14 Nov ~20:35 Helsinki)
 What happened: after the UI pass the owner opened the live URL and saw the old UI, while `curl` showed the new pages. Modal image files all have mtime 1970-01-01, so `python -m http.server` sent `Last-Modified: 1970` on every deploy and answered the browser's `If-Modified-Since` with **304 Not Modified**. A browser with the old page cached was told "nothing changed". With no Cache-Control and a 1970 Last-Modified, browsers may also treat the cached copy as fresh for a long time without asking. The redeploy alone didn't fix it either: the old container stayed warm (our own polling kept it alive) until we stopped it with `modal container stop -y`.

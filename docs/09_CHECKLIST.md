@@ -60,6 +60,10 @@ Commits: no Claude co-author trailer (user preference).
 - [ ] Sleep 23:30–05:00
 - [x] B7 trust ledger (Aiven): `et trust`, per-region trust in records/pages/scoreboard (L-21)
 - [x] B8 Modal live URL: https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run (L-22)
+- [x] Public GitHub repo (secret scan of tracked files + history clean): https://github.com/Yuvrajys2512/earned-trust
+- [x] Risk router `et tier` (T0–T3, named rules, no score, circuit breaker) in records, scoreboard, review + budget pages; live (L-27, L-28)
+- [x] Concept card v3 + README: router, judges' three questions, receipts by layer, outcome metrics, prior art
+- [x] Walkthrough v2: opens on "checking a story"; router + circuit-breaker beat; live phrases checked
 - [ ] Demo video ≤3 min
 - [x] Clean DECISIONS / LESSONS / FAILURE_MODES, README (LESSONS index added; timestamps checked)
 - [ ] Submit by 09:30

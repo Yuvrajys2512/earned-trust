@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** UI pass done and live (Sat ~20:05 Helsinki): shared FX layer (receipt machine, reveal stamps, time-machine rewind, planted-bug grid, 237→9 triage, printed receipt), phone-width fixed, attestations still VALID (L-25, F-45). Submission text drafted (`docs/11_SUBMISSION.md`, needs repo + video links). Next: sleep 23:30–05:00; Sunday record the video from `docs/10_WALKTHROUGH.md`, submit by 09:30. (Update this line after every round.)
+**Now:** Sun 15 Nov ~00:30 Helsinki: public repo (https://github.com/Yuvrajys2512/earned-trust); explainable risk router `et tier` live (T0–T3 from named rules, no score; #2129 T3 new public API, #2234/#2283 T3 by the circuit breaker, #2297 T2; L-27, L-28, F-46); concept card v3 (router, judges' Q&A, receipts by layer, outcome metrics, prior art; 1 printed page); walkthrough opens on "checking a story". Attestations VALID ×3. Next: record the video ~07:00 from `docs/10_WALKTHROUGH.md`, fill the video link in `docs/11_SUBMISSION.md`, submit by 09:30. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 
