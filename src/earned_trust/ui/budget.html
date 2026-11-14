@@ -137,7 +137,7 @@ function render() {
     + `<span style="width:${pct(read.length)};background:var(--accent)"></span>`
     + `<span style="width:${pct(unread.length)};background:var(--warn)"></span>`;
   $('fit').innerHTML = unread.length
-    ? `In ${current} min you read <b>${read.length}</b> of ${T.human} files (${usedMin} min). <b>${unread.length}</b> stay unread; the record will name them.`
+    ? `In ${current} min you read <b>${read.length}</b> of ${T.human} files (${usedMin} min). <b>${unread.length}</b> ${unread.length === 1 ? 'stays' : 'stay'} unread; the record names ${unread.length === 1 ? 'it' : 'them'}.`
     : `In ${current} min you read all <b>${T.human}</b> human files (${T.human_minutes} min). The other ${T.machine_cleared} have receipts.`;
   $('human').innerHTML = B.human.map(i => {
     const out = i.cumulative_minutes > current;

@@ -59,7 +59,8 @@ def calibration_block(cal: dict | None) -> dict:
     }
 
 
-def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, calibration: dict | None = None) -> dict:
+def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, calibration: dict | None = None,
+                 budget: dict | None = None) -> dict:
     tests = _by_test(ledger)
     hearsay: list[str] = []
 
@@ -68,9 +69,12 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
         evidence, missing = [], []
         for t in bc["tests"]:
             (evidence.append(_ev(tests[t])) if t in tests else missing.append(t))
-        proven = bool(evidence) and not missing and all(e["verdict"] == "catching" for e in evidence)
+        # The spec may say which ledger verdict proves this change (a regression is proven by
+        # `broken-by-pr`, a gap by `failing-both`); the ledger, not the spec, decides if it holds.
+        expect = bc.get("expect", "catching")
+        proven = bool(evidence) and not missing and all(e["verdict"] == expect for e in evidence)
         if not proven:
-            hearsay.append(f"{bc['id']}: '{bc['title']}' — cited tests are not all catching "
+            hearsay.append(f"{bc['id']}: '{bc['title']}' — cited tests are not all {expect} "
                            f"(missing: {missing or 'none'}); shown as unproven.")
         files = {}
         for name in bc.get("evidence_files", []):
@@ -82,6 +86,7 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
             "id": bc["id"],
             "title": bc["title"],
             "status": "proven" if proven else "unproven",
+            "proven_by": expect,
             "requirement_link": bc["requirement_link"],
             "link_why": bc["link_why"],
             "evidence": evidence,
@@ -100,8 +105,9 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
         claims.append({**c, "verdict": verdict, "evidence": ev})
 
     placebos = [_ev(e) for e in ledger["entries"] if e["verdict"] == "placebo"]
-    reviewer_tests = [e for e in ledger["entries"] if e["test"].startswith("EtGeneratorReceiptsTests.")]
-    agent_tests = [e for e in ledger["entries"] if not e["test"].startswith("EtGeneratorReceiptsTests.")]
+    # Reviewer-written receipts are named Et*Tests (receipts/<pr>/); everything else is the agent's.
+    reviewer_tests = [e for e in ledger["entries"] if e["test"].startswith("Et")]
+    agent_tests = [e for e in ledger["entries"] if not e["test"].startswith("Et")]
 
     def counts(entries):
         out: dict[str, int] = {}
@@ -112,14 +118,25 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
     def fmt(d: dict) -> str:
         return ", ".join(f"{v} {k}" for k, v in sorted(d.items(), key=lambda kv: -kv[1]))
 
-    checked = [
-        f"Git history: is the regression named in {pr.requirement.id} in this code's history? "
-        f"→ {facts.get('regression_check', {}).get('verdict', 'n/a')}",
+    checked = []
+    if facts.get("regression_check"):
+        checked.append(f"Git history: is the regression named in {pr.requirement.id} in this code's history? "
+                       f"→ {facts['regression_check']['verdict']}")
+    checked += [
         f"Agent's {len(agent_tests)} new tests run on base and on head: {fmt(counts(agent_tests))}",
         f"Reviewer's {len(reviewer_tests)} own tests of the source generator's output, run on base and head: "
         f"{fmt(counts(reviewer_tests))}",
         f"{len(facts['files'])} changed files classified: {fmt(facts['file_classes'])}",
     ]
+    ab = None
+    if budget:
+        t = budget["totals"]
+        ab = {"totals": t, "assumptions": budget["assumptions"], "regen": budget.get("regen"),
+              "human_files": [{k: i[k] for k in ("path", "cls", "why", "minutes", "cumulative_minutes")} for i in budget["human"]],
+              "machine_receipts_sha256": hashlib.sha256(json.dumps(budget["machine"], sort_keys=True).encode()).hexdigest()}
+        checked.append(f"{t['machine_cleared']} of {t['files']} files cleared by executed checks (snapshot regenerate + "
+                       f"byte compare, T4 output consistency); {t['human']} left for the human "
+                       f"(~{t['human_minutes']} min est., vs ~{t['naive_minutes']} to read everything)")
     cb = calibration_block(calibration)
     if cb["status"] == "measured":
         checked.append(f"{cb['planted']} known bugs planted in the changed code: " + "; ".join(
@@ -149,6 +166,7 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
         "checked": checked,
         "not_checked": spec["not_checked"],
         "calibration": calibration_block(calibration),
+        "attention_budget": ab,
         "hearsay": hearsay,
         "signoff": None,
     }

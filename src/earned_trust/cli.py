@@ -99,7 +99,9 @@ def cmd_record(args: argparse.Namespace) -> int:
             ledger["toolchain"] = {"dotnet_sdk": m.group(1), "note": "global.json overridden to SDK 9 in worktrees (L-04)"}
     cal_path = out_dir / "calibration.json"
     calibration = json.loads(cal_path.read_text(encoding="utf-8")) if cal_path.exists() else None
-    record = rec.build_record(pr, facts, ledger, spec, out_dir / "verify" / "evidence", calibration)
+    bud_path = out_dir / "budget.json"
+    budget = json.loads(bud_path.read_text(encoding="utf-8")) if bud_path.exists() else None
+    record = rec.build_record(pr, facts, ledger, spec, out_dir / "verify" / "evidence", calibration, budget)
     (out_dir / "record.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
     tpl = (Path(__file__).parent / "ui" / "review.html").read_text(encoding="utf-8")
     embedded = json.dumps(record).replace("</", "<\\/")
@@ -177,7 +179,7 @@ def cmd_budget(args: argparse.Namespace) -> int:
     regen = json.loads(regen_path.read_text(encoding="utf-8")) if regen_path.exists() else None
     if regen is None and facts["file_classes"].get("generated"):
         print(f"note: no {regen_path.relative_to(ROOT)}; generated files stay in the human lane", file=sys.stderr)
-    head = gf.resolve_branch(args.repo, pr.branch)
+    head = gf.git(args.repo, "rev-parse", "--short=8", gf.resolve_branch(args.repo, pr.branch)).strip()
     result = bd.build(args.repo, pr.base, head, facts, regen)
     result["requirement"] = facts["requirement"]
     ledger_path = out_dir / "ledger.json"
