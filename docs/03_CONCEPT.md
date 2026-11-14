@@ -52,4 +52,4 @@
 - Not a substitute for security review of secrets/infra changes.
 
 ## The demo in one sentence
-On `ju26-issue-2234`, the system finds that the regression described in #2234 isn't in this code's history, shows that half the agent's tests are placebos (they pass before the change), proves what the PR *really* changes — the analyzer no longer crashes on duplicate/mixed keys, and the generator now keeps the first of two duplicate-key members — flags that as a real fix for an *unrequested* bug, asks the human what duplicate keys *should* do, and records the signed decision.
+On `ju26-issue-2234`, the system finds that the regression described in #2234 isn't in this code's history, shows that 6 of the agent's 10 tests are placebos (they pass before the change), proves what the PR *really* changes — the analyzer no longer crashes on duplicate/mixed keys, and the generator now keeps the first of two duplicate-key members — flags that as a real fix for an *unrequested* bug, asks the human what duplicate keys *should* do, and records the signed decision.

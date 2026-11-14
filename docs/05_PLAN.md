@@ -1,22 +1,23 @@
 # 05 — Plan
 
-**Now:** Round 0 — setup + verify the 2234 placebo-test claim. (Update this line after every round.)
+**Now:** Round 0 done (except naming) → starting Round 1. 2234 verified: 6/10 agent tests are placebos, 4 prove an unrequested analyzer-crash fix (L-03). `uv run et facts all` works. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 
 Rule: **every round ends in something demoable**, even if hardcoded. Rounds 1–2 win the challenge; 3–4 get cut first.
 
 ## Round 0 — Setup & the decisive check (Sat ~02:00–03:00)
-- [ ] Fork the challenge repo; clone; fetch all `ju26-*` branches and tags (`scripts/setup.sh`)
-- [ ] Install .NET SDK 8.0.4xx; `dotnet build` the solution on base `32258fdb`
-- [ ] Run `scripts/verify_2234_base.sh` → do the agent's new 2234 tests pass on base? Record result in LESSONS_LOG.md
+- [x] Clone (no fork needed, see DECISIONS); fetch all `ju26-*` branches and tags (`scripts/setup.sh`)
+- [x] Install .NET SDK 8.0.428 + 9.0.321 (9 needed for ExecutionTests, L-04); build on base `32258fdb`
+- [x] Run `scripts/verify_2234_base.sh` → do the agent's new 2234 tests pass on base? Record result in LESSONS_LOG.md
 - [ ] Pick the concept name; log in DECISIONS.md
-- [ ] Decide stack (Python orchestrator + dotnet CLI); log it
+- [x] Decide stack (Python orchestrator + dotnet CLI); log it
 - [ ] Sleep at least a few hours
 
 ## Round 1 — Thin slice on #2234, end to end (Sat morning → ~13:00)
-- [ ] `git_facts`: file classes + the regression-ancestry check for 2234
-- [ ] Hand-write (or LLM-generate) 2–3 catching tests for 2234: duplicate key, mixed key; run on base vs PR
+- [x] `git_facts`: file classes + the regression-ancestry check for 2234 (`uv run et facts all`)
+- [ ] Turn verify script into `et prove`: per-test base/head outcome → ledger (placebo / catching), parsed from TRX
+- [ ] Write our *own* catching tests for 2234 beyond the agent's: generator output when MsgPack005 is suppressed (first-wins vs crash)
 - [ ] Produce `out/2234/record.json` with ≥1 proven behavior change, ≥1 refusal
 - [ ] Minimal HTML: question → human types prediction → reveal → sign → record saved
 - **Exit:** full flow runs on 2234. You now have a submission.

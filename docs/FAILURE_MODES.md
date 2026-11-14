@@ -9,7 +9,7 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | F-03 | Scope drift: global change for a local bug | seen | #2283 `ReportIfLocatedInCompilation` wraps all diagnostics | Requirement-scope tagging; question to human |
 | F-04 | Volume hides the real change | seen | #2297: 222 of 237 files are regenerated snapshots | Regenerate + byte-compare → auto-clear |
 | F-05 | No explanation from the agent | seen | All 4 branches: one-line commit messages | Reviewer builds intent blind |
-| F-06 | Placebo tests (pass before and after) | seen | #2234: 4 of 8 new analyzer tests pass on base (L-03) | Tests must fail on base to count as evidence; tag per test, not per file |
+| F-06 | Placebo tests (pass before and after) | seen | #2234: 6 of 10 new tests pass on base (4/8 analyzer, 2/2 execution) (L-03) | Tests must fail on base to count as evidence; tag per test, not per file |
 | F-07 | Prompt injection via PR text / title / images | known | Azure DevOps hidden HTML comments; GhostCommit | Quarantine; story is untrusted |
 | F-08 | Automation bias / rubber-stamping | known | GitHub trial; AIDev 98.2% no review comment | Predict-before-reveal |
 | F-09 | Self-preference bias of same-family reviewer | known | Pombal et al. 2026 | Different family reviewer; author hidden |

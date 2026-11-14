@@ -29,7 +29,7 @@ The size ladder (4, 4, 28, 237) looks deliberate: it breaks any one-size-fits-al
 - **`1a74a620`, `v3.1.0` and `v3.1.1` are NOT ancestors of the challenge base `32258fdb`.** In the base, the early return is still at the end (~L1369), so analysis does run for suppressed types.
 - So the reported root cause does not exist in the code the agent worked on. The agent instead changed duplicate-key / mixed-key handling — a **behavior change not asked for by the requirement**.
 
-**Verified 14 Nov (`scripts/verify_2234_base.sh`, see LESSONS_LOG L-03):** of the agent's 8 analyzer tests, **4 pass on base (placebos)** and **4 fail on base / pass on head**. The 4 real ones show that on base the analyzer reports MsgPack005 and then **crashes with AD0001** on duplicate or mixed keys; the PR removes the crash. So the PR fixes a real analyzer bug — just not the #2234 regression. Correction to our earlier reading: the duplicate-key drop is *not* silent by default, because MsgPack005 is an error.
+**Verified 14 Nov (`scripts/verify_2234_base.sh`, see LESSONS_LOG L-03):** of the agent's 10 new tests, **6 pass on base (placebos: 4 analyzer + both execution tests)** and **4 analyzer tests fail on base / pass on head**. The 4 real ones show that on base the analyzer reports MsgPack005 and then **crashes with AD0001** on duplicate or mixed keys; the PR removes the crash. So the PR fixes a real analyzer bug — just not the #2234 regression. Correction to our earlier reading: the duplicate-key drop is *not* silent by default, because MsgPack005 is an error.
 
 Reproduce the git facts:
 ```bash
