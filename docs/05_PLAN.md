@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** Deliverables done except the video (Sat 16:44 Helsinki): concept card v2 + `card.html`, README, `docs/10_WALKTHROUGH.md`, live dry run (L-24), #2283 over-claim fixed (L-23), logs indexed. Next: sleep 23:30–05:00; Sunday record the video from the walkthrough, write submission text, submit by 09:30. (Update this line after every round.)
+**Now:** Submission text drafted in `docs/11_SUBMISSION.md` (Sat ~18:50 Helsinki); needs repo link + video link. Next: sleep 23:30–05:00; Sunday record the video from `docs/10_WALKTHROUGH.md`, fill links, submit by 09:30. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 
