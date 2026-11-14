@@ -4,6 +4,7 @@ Format: newest first. One line of decision, one line of why. Times Helsinki.
 
 | When | Decision | Why |
 | --- | --- | --- |
+| Sat 14 Nov ~07:30 | Concept name: **Receipts, not reviews** (pipeline tagline: *Prove · Predict · Sign*) | Says the core idea in three words: executed evidence instead of opinions. The 2234 placebo-test finding (6/10 tests have no receipt) shows it on real data |
 | Sat 14 Nov ~06:30 | `git_facts` classifies T4 outputs by checking a sibling `.tt` exists in the head tree, not by folder | First version put `TransformUtilities.cs` (hand-written, in `Transforms/`) in the auto-clearable bucket — exactly the file a human must see |
 | Sat 14 Nov ~06:30 | Regression archaeology is generic: requirement may carry `regressed_between=(good, bad)`; we check ancestry of `bad` and of every `good..bad` commit touching the PR's src files | Turns the one-off 2234 finding into a reusable Scope-stage check with executed evidence |
 | Sat 14 Nov ~06:15 | Stack: Python orchestrator (`src/earned_trust`, `uv run et …`), stdlib only for now; `dotnet` CLI for builds/tests; bash scripts for one-off checks | Zero install friction; add deps (LLM SDKs) only when a stage needs them |

@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** Round 0 done (except naming) → starting Round 1. 2234 verified: 6/10 agent tests are placebos, 4 prove an unrequested analyzer-crash fix (L-03). `uv run et facts all` works. (Update this line after every round.)
+**Now:** Round 0 done; concept named *Receipts, not reviews* → starting Round 1. 2234 verified: 6/10 agent tests are placebos, 4 prove an unrequested analyzer-crash fix (L-03). `uv run et facts all` works. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 
@@ -10,7 +10,7 @@ Rule: **every round ends in something demoable**, even if hardcoded. Rounds 1–
 - [x] Clone (no fork needed, see DECISIONS); fetch all `ju26-*` branches and tags (`scripts/setup.sh`)
 - [x] Install .NET SDK 8.0.428 + 9.0.321 (9 needed for ExecutionTests, L-04); build on base `32258fdb`
 - [x] Run `scripts/verify_2234_base.sh` → do the agent's new 2234 tests pass on base? Record result in LESSONS_LOG.md
-- [ ] Pick the concept name; log in DECISIONS.md
+- [x] Pick the concept name; log in DECISIONS.md → **Receipts, not reviews**
 - [x] Decide stack (Python orchestrator + dotnet CLI); log it
 - [ ] Sleep at least a few hours
 

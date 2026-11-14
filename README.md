@@ -1,8 +1,8 @@
-# Earned Trust in AI Code — Junction 2026
+# Receipts, not reviews — Earned Trust in AI Code (Junction 2026)
 
 **Challenge:** How does AI code review keep pace with AI-written code, while humans stay accountable for every change? (Tietoevry, Junction 2026, Espoo)
 
-**Our answer (working title):** *The AI proves what changed. The human predicts what should happen. Every mismatch is the review.*
+**Our answer: Receipts, not reviews.** *The AI proves what changed. The human predicts what should happen. Every mismatch is the review.*
 
 Instead of asking a human to read 200 agent-written lines, we:
 

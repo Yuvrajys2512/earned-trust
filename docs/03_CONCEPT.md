@@ -2,11 +2,9 @@
 
 > Deliverable: recommendation, principles, trade-offs, limits. Keep it to one screen when presented. Iterate as the build teaches us things — log changes in DECISIONS.md.
 
-## Working name (pick one in Round 0)
-- **Prove · Predict · Sign**
-- **Receipts, not reviews**
-- **The human is the oracle**
-- **Earned, not asserted**
+## Name: **Receipts, not reviews**
+Every claim the human sees comes with a receipt: something that was *executed* (a test that fails on base and passes on the PR, a byte comparison, a git ancestry check). No receipt means hearsay. Our first real receipt: 6 of the agent's 10 tests on #2234 pass on the old code, so they are claims with no receipt (L-03).
+Tagline for the pipeline: *Prove · Predict · Sign.*
 
 ## Recommendation (one sentence)
 **Stop asking humans to read AI-written diffs. Have the AI *prove* what behavior changed, have the named human *predict* what should happen before seeing it, and treat every mismatch as the review.**
