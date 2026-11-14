@@ -55,7 +55,7 @@ Commits: no Claude co-author trailer (user preference).
 - [x] Docs + tick (tamper tests: evidence byte and verdict flip both INVALID)
 
 ## Feature freeze 21:00 — Deliverables
-- [ ] Concept card v2 (`docs/03_CONCEPT.md` → one-page visual; add P8–P10)
+- [x] Concept card v2 (`docs/03_CONCEPT.md` → one-page visual `card.html`; add P8–P10)
 - [ ] Walkthrough script (from 08 §6) + dry run
 - [ ] Sleep 23:30–05:00
 - [x] B7 trust ledger (Aiven): `et trust`, per-region trust in records/pages/scoreboard (L-21)

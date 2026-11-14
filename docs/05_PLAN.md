@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** B2–B8 all done (Sat 15:02 Helsinki). B7: trust ledger on Aiven, TypeCollector.cs withdrawn after the 1a74a620 escape (L-21). B8: live at https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run (L-22). Next: deliverables (concept card v2, walkthrough script, dry run), then video Sunday. (Update this line after every round.)
+**Now:** Concept card v2 done (Sat 16:45 Helsinki): `docs/03_CONCEPT.md` v2 (P8–P10) + one-page `card.html` linked from the scoreboard. Next: README refresh, walkthrough script, dry run + redeploy. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 
@@ -40,7 +40,7 @@ Rule: **every round ends in something demoable**, even if hardcoded. Rounds 1–
 - [ ] Wire tech-challenge partners for real use (see 07_TECH_CHALLENGES.md)
 
 ## Final — Deliverables (Sun ~06:00 → 09:30)
-- [ ] Concept card final (03_CONCEPT.md → one slide/page)
+- [x] Concept card final (03_CONCEPT.md → one slide/page: `card.html`)
 - [ ] Record the demo video (live walkthrough of 2234 + 2297 slider)
 - [ ] Clean LESSONS_LOG.md, DECISIONS.md, FAILURE_MODES.md
 - [ ] Submit by 09:30 (30-min buffer)

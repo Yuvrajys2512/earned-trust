@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipts, not reviews</title>
+<style>
+:root{
+  --bg:#f6f4ef; --paper:#fffdf8; --ink:#1c1b19; --muted:#6b675f; --line:#e2ddd2;
+  --accent:#2f5bd3; --ok:#1f7a4d; --ok-bg:#e3f3ea; --warn:#9a5b00; --warn-bg:#fbf0dc;
+  --bad:#b3261e; --bad-bg:#fbe6e4; --info-bg:#e8eefc; --code:#f1eee6;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151513; --paper:#1d1d1a; --ink:#ece9e1; --muted:#a19c91; --line:#34322d;
+    --accent:#7c9cff; --ok:#5fd19a; --ok-bg:#16301f; --warn:#f0b45a; --warn-bg:#33270f;
+    --bad:#ff8a80; --bad-bg:#3a1714; --info-bg:#1b2440; --code:#262521;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151513; --paper:#1d1d1a; --ink:#ece9e1; --muted:#a19c91; --line:#34322d;
+  --accent:#7c9cff; --ok:#5fd19a; --ok-bg:#16301f; --warn:#f0b45a; --warn-bg:#33270f;
+  --bad:#ff8a80; --bad-bg:#3a1714; --info-bg:#1b2440; --code:#262521;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans)}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 40px}
+header{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:10px}
+h1{font-size:24px;margin:0;letter-spacing:-.01em}
+h1 small{font-weight:400;color:var(--muted);font-size:14px;margin-left:8px}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px}
+.rec{font-size:17px;font-weight:600;margin:12px 0 4px;max-width:70ch}
+.muted{color:var(--muted)}
+a{color:var(--accent)}
+button.theme{font:inherit;font-size:13px;background:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--ink);cursor:pointer}
+.factory{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0}
+.step{background:var(--paper);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:8px;padding:8px 10px}
+.step b{display:block;font-size:15px}
+.step span{font-size:12.5px;color:var(--muted)}
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px}
+.num{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.num .n{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.num .l{font-size:12px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:1.35fr 1fr;gap:14px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+ol.p{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:4px 14px}
+ol.p li{font-size:13px}
+ol.p .k{font:600 11px/1 var(--mono);color:var(--accent);margin-right:4px}
+ul{margin:0;padding-left:16px} li{margin:2px 0;font-size:13px}
+.stack{display:grid;gap:14px}
+footer{margin-top:14px;font-size:12px;color:var(--muted)}
+@media (max-width:760px){
+  .factory{grid-template-columns:1fr 1fr}
+  .nums{grid-template-columns:1fr 1fr}
+  .cols{grid-template-columns:1fr}
+  ol.p{grid-template-columns:1fr}
+}
+@media print{
+  body{background:#fff;font-size:11.5px} .wrap{padding:0} button.theme{display:none}
+  .card,.step,.num{break-inside:avoid}
+}
+</style>
+</head>
+<body><div class="wrap">
+<header>
+  <h1>Receipts, not reviews <small>Prove · Predict · Sign</small></h1>
+  <span><a href="index.html">scoreboard</a> &nbsp; <button class="theme" onclick="toggleTheme()">theme</button></span>
+</header>
+
+<p class="rec">Stop asking humans to read AI-written diffs. Make the AI <em>prove</em> what behavior changed, have the named human <em>predict</em> what should happen before seeing it, and treat every mismatch as the review.</p>
+<p class="muted" style="margin:0">Every claim comes with a receipt: something that was executed (a test on base and PR, a byte compare, a git fact). No receipt = hearsay, and it is labelled so.</p>
+
+<div class="factory">
+  <div class="step"><b>Prove</b><span>Tests on base vs PR. Fails on base, passes on PR = proven change. Passes on both = placebo.</span></div>
+  <div class="step"><b>Predict</b><span>The human commits to what <em>should</em> happen before the reveal. A mismatch is the review.</span></div>
+  <div class="step"><b>Measure</b><span>Planted bugs for tests and AI, a disclosed drill for the human, backtests on past regressions.</span></div>
+  <div class="step"><b>Refuse</b><span>What the requirement doesn't cover becomes "I won't decide this", a question for the human.</span></div>
+  <div class="step"><b>Sign</b><span>A signed in-toto attestation: evidence hashes, predictions, refusals, name. Anyone can verify it.</span></div>
+</div>
+
+<div class="nums">
+  <div class="num"><div class="n">6 / 10</div><div class="l">agent tests on #2234 are placebos (pass on the old code)</div></div>
+  <div class="num"><div class="n">0 → 10/10</div><div class="l">AI reviewer found nothing on the real PR; tests + AI catch 10/10 planted bugs</div></div>
+  <div class="num"><div class="n">237 → 9</div><div class="l">files a human reads on #2297 (222 snapshots byte-identical)</div></div>
+  <div class="num"><div class="n">~10 months</div><div class="l">before a user reported it: replayed on the 2024 bug commit (0-review merge), the agent's tests go red</div></div>
+</div>
+
+<div class="cols">
+  <div class="card">
+    <h2>Principles</h2>
+    <ol class="p">
+      <li><span class="k">P1</span><b>Evidence or it didn't happen.</b> LLM opinion is hearsay.</li>
+      <li><span class="k">P2</span><b>Confidence is measured</b>, never self-reported.</li>
+      <li><span class="k">P3</span><b>The AI may refuse.</b> Uncovered change is a question.</li>
+      <li><span class="k">P4</span><b>The story is untrusted.</b> PR text is quoted, never obeyed.</li>
+      <li><span class="k">P5</span><b>Predict before you see</b>, so the AI can't anchor you.</li>
+      <li><span class="k">P6</span><b>Spend human minutes on risk.</b> Clear the mechanical.</li>
+      <li><span class="k">P7</span><b>Every signature is replayable.</b></li>
+      <li><span class="k">P8</span><b>Trust is earned on history</b>, per region, withdrawn after an escape.</li>
+      <li><span class="k">P9</span><b>Calibrate every screener</b>, the human too.</li>
+      <li><span class="k">P10</span><b>The record is the product</b>, not a PR comment.</li>
+    </ol>
+  </div>
+  <div class="stack">
+    <div class="card">
+      <h2>Trade-offs</h2>
+      <ul>
+        <li>CI minutes for human minutes: tests run on base, PR and mutants.</li>
+        <li>A drill costs ~1 min; people dislike forcing functions.</li>
+        <li>Backtests need a history of known regressions.</li>
+        <li>Machine clearing helps mechanical change only: #2129 clears 2 of 28 files.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>Limits</h2>
+      <ul>
+        <li>Unproven ≠ safe: it's shown as unknown.</li>
+        <li>Planted bugs measure known bug types, not unknown unknowns.</li>
+        <li>Weak on architecture fit; needs a buildable, testable repo.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<footer>Evidence toward DORA Art. 9 change management and SLSA two-party review; it supports these, it doesn't make anyone compliant. Demo signing key, not a personal identity. Numbers: executed on the Junction 2026 MessagePack-CSharp agent branches.</footer>
+</div>
+<script>
+function toggleTheme(){ const r=document.documentElement; const dark = r.dataset.theme ? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark?'light':'dark'; }
+</script>
+</body></html>

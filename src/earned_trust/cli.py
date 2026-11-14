@@ -456,6 +456,8 @@ def cmd_index(args: argparse.Namespace) -> int:
     (ROOT / "out" / "index.json").write_text(json.dumps(data, indent=2), encoding="utf-8")
     tpl = (Path(__file__).parent / "ui" / "index.html").read_text(encoding="utf-8")
     (ROOT / "out" / "index.html").write_text(tpl.replace("/*INDEX_JSON*/", json.dumps(data).replace("</", "<\\/")), encoding="utf-8")
+    import shutil
+    shutil.copyfile(Path(__file__).parent / "ui" / "card.html", ROOT / "out" / "card.html")  # static concept card
     for p in prs:
         print(f"   #{p['key']} [{p['status']}] {p['headline'][:100]}")
     for m in method:
@@ -532,7 +534,7 @@ def cmd_site(args: argparse.Namespace) -> int:
     site = ROOT / "out" / "site"
     shutil.rmtree(site, ignore_errors=True)
     site.mkdir(parents=True)
-    files = ["index.html"]
+    files = ["index.html", "card.html"]
     for key in PRS:
         for rel in ("review.html", "ai/review.html", "budget.html", "record.json",
                     "attestation/statement.json", "attestation/statement.json.sig"):
