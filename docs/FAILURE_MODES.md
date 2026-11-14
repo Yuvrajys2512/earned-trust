@@ -5,7 +5,7 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | ID | Failure mode | Seen / known | Where / evidence | How the concept handles it |
 | --- | --- | --- | --- | --- |
 | F-01 | Fix targets a cause that isn't in the codebase's history | seen | #2234, commit `1a74a620` not ancestor of base | Scope stage checks requirement vs history |
-| F-02 | Silent behavior change outside the requirement (duplicate keys dropped, mixed-key member skipped) | seen | #2234 `TypeCollector.cs` `ContainsKey` guards + `continue` | Catching tests prove it; tagged `collateral`; human asked |
+| F-02 | Behavior change outside the requirement (duplicate-key member dropped, mixed-key member skipped; silent only if MsgPack005 is downgraded — see F-12) | seen | #2234 `TypeCollector.cs` `ContainsKey` guards + `continue` | Catching tests prove it; tagged `collateral`; human asked |
 | F-03 | Scope drift: global change for a local bug | seen | #2283 `ReportIfLocatedInCompilation` wraps all diagnostics | Requirement-scope tagging; question to human |
 | F-04 | Volume hides the real change | seen | #2297: 222 of 237 files are regenerated snapshots | Regenerate + byte-compare → auto-clear |
 | F-05 | No explanation from the agent | seen | All 4 branches: one-line commit messages | Reviewer builds intent blind |
