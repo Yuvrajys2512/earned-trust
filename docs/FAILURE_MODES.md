@@ -29,5 +29,8 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | F-23 | Reviewer model times out / errors intermittently | seen | Gemma 31B HTTP 500s and read timeouts (M07) | Retry, fall back, record the model that answered; no answer = unknown |
 | F-24 | Judge-of-the-judge drift: scoring rule tuned after seeing results | seen (by us) | L-08 | One rule for all mutants, fixed in code, all stored findings re-scored |
 | F-25 | Partial rerun overwrote a valid reviewer answer with a timeout (unknown) | seen (by us) | control re-run during M07 retry | `--only` skips control; merge never replaces an answer with an unknown |
+| F-26 | Agent's explanation states a false platform fact to justify a design choice ("attribute not available on netstandard2.0 / .NET Framework") and its own test enshrines it | seen | 2297 README + `CodeCoverageExclusionTests` guard test; refuted by T-06 | Story claims are hearsay until executed: a fact-check receipt compiles the attribute on both targets |
+| F-27 | Agent's tests check text, not semantics, and only the happy path: the PR breaks consumers who already annotated their partial resolver (CS0579) and no test notices | seen | 2297 T-04 `broken-by-pr` | Reviewer writes receipts from the consumer's side (compile user code + generated code), not string search |
+| F-28 | Shared test harness cache corrupted by parallel downloads makes every test fail before doing work | seen (by us) | L-12 | Machine checks fail closed (files go to the human); warm caches serially |
 
 Add rows as the build surfaces new ones (especially failures of *our own* reviewer).

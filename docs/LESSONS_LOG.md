@@ -13,6 +13,28 @@ Evidence: <command / file / link>
 
 ---
 
+### L-13 — #2297's 10-minute review finds a build break the agent's tests miss (Sat 14 Nov ~10:20)
+What happened: `scripts/verify_2297_base.sh` (agent's test + 4 reviewer receipts, base vs head) → ledger: catching 3, **broken-by-pr 1**, failing-both 1, placebo 1.
+- **T-04 broken-by-pr:** a consumer with `[GeneratedMessagePackResolver][ExcludeFromCodeCoverage] partial class MyResolver` compiles on base and fails on the PR with **CS0579 duplicate attribute** (the attribute is `AllowMultiple = false`; the generator now adds a second copy to the same partial type). A plausible user setup becomes a build break on upgrade.
+- **T-06 placebo/fact check:** `[ExcludeFromCodeCoverage]` on a class and a nested class compiles against netstandard2.0 **and** net472 reference assemblies. The PR's README line and guard test claim it is "not available" there.
+- **T-05 failing-both:** so a netstandard2.0 consumer (Unity, shared libs) gets no exclusion, before or after; the requirement is only met for modern TFMs.
+- The agent's 2 tests are both `catching` but assert by string search; neither would notice T-04.
+What we learned: the attention budget and the ledger are one move. Cutting 237 files to 9 is only safe because the questions that matter (does the consumer still build? is the story true?) are executed, not read. Of the 10.5 human minutes, the first should go to the predict-then-reveal question "a user already excluded their resolver; what happens on upgrade?"
+Evidence: `out/verify_2297_run.log`, `uv run et prove 2297` → `out/2297/ledger.json`; receipts in `receipts/2297/EtCoverageReceiptsTests.cs`.
+
+### L-12 — A shared test cache got corrupted by parallel downloads; the check fails *closed* (Sat 14 Nov ~09:50)
+What happened: the first snapshot regeneration run failed in 160 of 169 tests before any snapshot was written. Cause: `Microsoft.CodeAnalysis.Testing` downloads `Microsoft.NETCore.App.Ref 8.0.0` into `%TEMP%\test-packages`. 160 tests racing on an empty cache left a `.nupkg` with no extracted `.nuspec`, and every later run failed with "package is missing the required nuspec file".
+What we learned: the regen check failed closed: 222 × `not-regenerated`, 0 cleared. That's the property we want. A broken harness must push files *to* the human, never silently clear them.
+What changed: `scripts/regen_2297.sh` warms the cache with one test before the parallel run; the corrupt cache entry was deleted.
+Evidence: `out/2297/regen/test.log` (first run); `out/2297/regen/warmup.log`.
+
+### L-11 — 228 of 237 files clear by machine; human time 124.5 → 10.5 min (estimate) (Sat 14 Nov ~10:00)
+What happened: for #2297 we reset all 222 changed snapshots to their **base** bytes, rebuilt the generator tests with the repo's own `WRITE_EXPECTED` switch, ran them, and compared each rewritten file's git blob id with the PR's. **222/222 identical.** The 6 T4 outputs (`*.cs` next to `*.tt`) pass a string-level check: every line the PR added to a template appears in the committed output the same number of times. That leaves 9 files for a human: `TransformUtilities.cs`, 6 templates, the agent's test, README.
+Negative control: appending `// junk` to one snapshot (`TwoTypes(False)`) makes its test fail in a normal build, so the snapshot tests really check bytes.
+Open question (honest): under `WRITE_EXPECTED` all 169 tests *passed*, even though the embedded resources were base bytes. We don't rely on test outcomes here (the receipt is the blob id), but we can't yet explain it.
+What we learned: "regenerate + byte-compare" turns 222 files from *read* into *receipt*. The interesting lines move into the 9 files: `TransformUtilities.cs` changes brace output for constrained nesting types. That is not in the requirement, and it's the first file the budget puts in front of the human.
+Evidence: `bash scripts/regen_2297.sh` → `out/2297/regen/regen.json`; `uv run et budget 2297` → `out/2297/budget.{json,html}`.
+
 ### L-10 — Tests and the AI reviewer catch *different* planted bugs; the reviewer passed the real PR (Sat 14 Nov ~07:50)
 What happened: 10 bugs planted in the PR's changed regions of `TypeCollector.cs` (7 in the property path, 3 in the duplicated field path). Test suite (agent tests + our receipts): 6/10, **0/3 in the field path** (every test uses properties) and it missed `break`-for-`continue` (M04). Gemma 4 31B as reviewer, shown base→mutant diff, never told a bug was planted: 9/10 after the matcher fix (L-08) and an M07 retry, caught all 3 field-path bugs and M04, missed M03 (`continue` removed) while inventing a "missing diagnostic" that exists. Together: every measured mutant caught by at least one screener.
 Control run on the **real** PR: Gemma reported **0 findings** (reproduced on a second run) — it would have approved the silent first-wins member drop that our receipts prove (BC-2).

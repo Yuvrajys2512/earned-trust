@@ -6,6 +6,7 @@
     uv run et record 2234           # facts + ledger + receipts/2234/review.json -> record.json + review.html
     uv run et calibrate 2234 --tests            # planted bugs vs the test suite (local dotnet)
     uv run et calibrate 2234 --reviewer gemma   # planted bugs vs the AI reviewer
+    uv run et budget 2297           # machine-cleared vs human files (needs scripts/regen_2297.sh first)
 """
 from __future__ import annotations
 
@@ -167,6 +168,39 @@ def cmd_calibrate(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_budget(args: argparse.Namespace) -> int:
+    from . import budget as bd
+    pr = PRS[args.pr]
+    out_dir = ROOT / "out" / args.pr
+    facts = json.loads((out_dir / "facts.json").read_text(encoding="utf-8"))
+    regen_path = out_dir / "regen" / "regen.json"
+    regen = json.loads(regen_path.read_text(encoding="utf-8")) if regen_path.exists() else None
+    if regen is None and facts["file_classes"].get("generated"):
+        print(f"note: no {regen_path.relative_to(ROOT)}; generated files stay in the human lane", file=sys.stderr)
+    head = gf.resolve_branch(args.repo, pr.branch)
+    result = bd.build(args.repo, pr.base, head, facts, regen)
+    result["requirement"] = facts["requirement"]
+    ledger_path = out_dir / "ledger.json"
+    if ledger_path.exists():  # executed base/head outcomes: what the human's minutes should go to first
+        lg = json.loads(ledger_path.read_text(encoding="utf-8"))
+        result["ledger"] = {"counts": lg["counts"], "entries": [
+            {k: e[k] for k in ("id", "test", "verdict", "signal")} for e in lg["entries"]]}
+    result["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    out = out_dir / "budget.json"
+    out.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    tpl = (Path(__file__).parent / "ui" / "budget.html").read_text(encoding="utf-8")
+    (out_dir / "budget.html").write_text(tpl.replace("/*BUDGET_JSON*/", json.dumps(result).replace("</", "<\\/")), encoding="utf-8")
+    t = result["totals"]
+    print(f"== budget {pr.requirement.id}: {t['files']} files -> {t['machine_cleared']} machine-cleared, {t['human']} human")
+    print(f"   minutes (estimate): naive {t['naive_minutes']} -> human {t['human_minutes']}")
+    for r in result["t4"]:
+        print(f"   T4 {r['verdict']:<12} {r['template']}")
+    for i in result["human"]:
+        print(f"   {i['cumulative_minutes']:>5} min  {i['cls']:<15} {i['path']}  ({i['why']})")
+    print(f"   -> {out.relative_to(ROOT)}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="et", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--repo", default=DEFAULT_REPO, help="path to the msgpack clone (default: ../msgpack or $MSGPACK_REPO)")
@@ -188,6 +222,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--repeat", type=int, default=1, help="reviewer runs per mutant (models are stochastic)")
     p.add_argument("--only", nargs="*", help="mutant ids, e.g. M01 M08")
     p.set_defaults(func=cmd_calibrate)
+    p = sub.add_parser("budget", help="attention budget: which files a machine clears, which a human reads")
+    p.add_argument("pr", choices=list(PRS))
+    p.set_defaults(func=cmd_budget)
     args = ap.parse_args(argv)
     return args.func(args)
 
