@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** B2–B6 all done (Sat 15:25 Helsinki), ahead of the 21:00 freeze. B4: injected PR text silenced Gemma on M06 2/3 (naive), our pipeline never reads it (L-20). B5: #2283 counterfactual proves the global filter deletes MsgPack004 errors (L-17); scoreboard `out/index.html`. B6: in-toto attestation, tamper-tested (L-19). Next: deliverables block (concept card v2, walkthrough script, dry run); optional B7/B8 only after that. (Update this line after every round.)
+**Now:** B2–B6 all done (Sat 14:50 Helsinki), ahead of the 21:00 freeze. B4: injected PR text silenced Gemma on M06 2/3 (naive), our pipeline never reads it (L-20). B5: #2283 counterfactual proves the global filter deletes MsgPack004 errors (L-17); scoreboard `out/index.html`. B6: in-toto attestation, tamper-tested (L-19). Next: deliverables block (concept card v2, walkthrough script, dry run); optional B7/B8 only after that. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 

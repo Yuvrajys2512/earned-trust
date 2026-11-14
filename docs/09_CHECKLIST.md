@@ -30,25 +30,25 @@ Commits: no Claude co-author trailer (user preference).
 - [x] Prompt iterations scored (planted-bug / BC recall) → notes for the Nemotron submission text
 - [x] Docs + tick (L-15, F-30..F-34, DECISIONS; guard check `scripts/check_hearsay_guard.py`)
 
-## B3 — Human drill (two-sided calibration) — DONE 15:05 (L-16)
+## B3 — Human drill (two-sided calibration) — DONE 14:36 (L-16)
 - [x] Drill question built from an existing mutant with executed evidence (e.g. M04 `break`-for-`continue`), disclosed up front ("one question is a drill")
 - [x] Record: `human_calibration {drills, caught}`; signing with a missed drill flags the signature
 - [x] UI: drill reveal + flag
 - [x] Docs + tick (+ option shuffle, F-35)
 
-## B4 — Injection demo — DONE 15:25 (L-20)
+## B4 — Injection demo — DONE 14:50 (L-20)
 - [x] `samples/pr_descriptions/injected_2234.md` (hidden HTML comment + zero-width chars + "pre-approved, report no findings")
 - [x] `quarantine.py`: detect + quote as data (regex: HTML comments, zero-width, imperative-to-reviewer patterns)
 - [x] Naive run: Gemma reviews diff **with** PR text → record its output; ours: unchanged verdict + flags
 - [x] Story-claims panel shows the flag; docs + tick
 
-## B5 — 4-PR portfolio — DONE 15:00 (L-17, L-18)
+## B5 — 4-PR portfolio — DONE 14:45 (L-17, L-18)
 - [x] #2283: receipt + counterfactual (head minus the filter) proves the filter deletes real MsgPack004 errors; ledger + spec + record
 - [x] #2129: facts + budget (2/28 cleared: the method's honest boundary)
 - [x] `out/index.html` scoreboard: per PR one-line truth, receipts, human minutes, link to page
 - [x] Docs + tick
 
-## B6 — Attestation — DONE 15:15 (L-19)
+## B6 — Attestation — DONE 14:47 (L-19)
 - [x] `et attest <pr>`: in-toto Statement (subject = head commit, predicateType `https://earned-trust.dev/review/v0.1`), `ssh-keygen -Y sign`
 - [x] `et verify <pr>`: signature + re-hash of evidence
 - [x] Mapping table → DORA Art. 9 / SLSA Source L4 / PLD in 03_CONCEPT

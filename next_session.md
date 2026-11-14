@@ -1,6 +1,6 @@
 # Next session: start here
 
-Last updated **Sat 14 Nov 15:25 Helsinki** (machine clock is IST = Helsinki + 3 h 30 min; always convert).
+Last updated **Sat 14 Nov 14:50 Helsinki** (machine clock is IST = Helsinki + 3 h 30 min; always convert).
 Deadline: **submit by Sun 15 Nov 09:30 Helsinki** (hard 10:00). Feature freeze **Sat 21:00**. Sleep **23:30–05:00**.
 
 ## 1. Read first (5 min)
