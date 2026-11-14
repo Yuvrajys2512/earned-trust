@@ -446,6 +446,27 @@ def cmd_index(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_attest(args: argparse.Namespace) -> int:
+    from . import attest as at
+    pr = PRS[args.pr]
+    ref = gf.resolve_branch(args.repo, pr.branch)
+    head = gf.git(args.repo, "rev-parse", ref).strip()
+    st = at.attest(args.pr, args.repo, head, pr.branch, Path(args.signed) if args.signed else None)
+    print(f"== attested #{args.pr}: subject {head[:12]}, predicate {at.PREDICATE_TYPE}")
+    print(f"   -> {st.relative_to(ROOT)} + .sig (ssh-keygen -Y sign, namespace {at.NAMESPACE}, demo key out/attest/)")
+    return cmd_verify(args)
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    from . import attest as at
+    pr = PRS[args.pr]
+    res = at.verify(args.pr, args.repo, gf.resolve_branch(args.repo, pr.branch))
+    for c in res["checks"]:
+        print(f"   [{'ok' if c['ok'] else 'FAIL'}] {c['check']}: {c['detail'][:140]}")
+    print(f"== verify #{args.pr}: {'VALID' if res['ok'] else 'INVALID'}")
+    return 0 if res["ok"] else 1
+
+
 TIME_MACHINE = {"2234": {"pr": 2106, "issue": 2234, "bad": "1a74a620"}}
 
 
@@ -503,6 +524,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--runs", type=int, default=1, help="independent runs (models are stochastic)")
     p.add_argument("--prompt", default="v2", help="prompt version (see spec.PROMPTS)")
     p.set_defaults(func=cmd_spec)
+    p = sub.add_parser("attest", help="sign the review record as an in-toto Statement (ssh-keygen -Y sign)")
+    p.add_argument("pr", choices=list(PRS))
+    p.add_argument("--signed", help="signed record downloaded from the review page (adds the human sign-off)")
+    p.set_defaults(func=cmd_attest)
+    p = sub.add_parser("verify", help="verify signature, record hash, evidence files and subject commit")
+    p.add_argument("pr", choices=list(PRS))
+    p.set_defaults(func=cmd_verify)
     p = sub.add_parser("index", help="scoreboard across all PRs -> out/index.html")
     p.set_defaults(func=cmd_index)
     p = sub.add_parser("inject", help="quarantine author text; optionally run the naive reviewer that reads it")

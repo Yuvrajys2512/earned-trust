@@ -42,6 +42,23 @@ Tagline for the pipeline: *Prove · Predict · Sign.*
 - **Friction on purpose:** predict-before-reveal slows approval down slightly; that friction is the safety feature.
 - **False alarms:** catching tests can fail for flaky reasons; needs filtering (Meta uses rule-based + LLM assessors).
 
+## The record as evidence (B6: `et attest` / `et verify`)
+The review record is wrapped in an **in-toto Statement** (subject = the PR head commit, `predicateType: https://earned-trust.dev/review/v0.1`), with every executed evidence file listed as a hashed material, and signed with `ssh-keygen -Y sign`. `et verify` checks the signature, re-computes the record hash, re-hashes every evidence file and checks the subject commit. Changing one evidence byte, or flipping one verdict in the statement, makes it INVALID (tested).
+
+What each field is evidence *for* (it supports these obligations; it doesn't make anyone compliant on its own):
+
+| Record field | DORA Art. 9 ICT change management (EU finance, since Jan 2025) | SLSA Source L4 (two-party review) | EU Product Liability Directive (software, from 9 Dec 2026) |
+| --- | --- | --- | --- |
+| `requirement`, `blind_intent`, `requirement_link` per change | change is documented and its purpose assessed | review is tied to a specific change | what the product was meant to do |
+| `ledger` / behavior changes with TRX hashes (base vs head) | change is **tested**, with recorded results | "successful test runs" in the attestation | state of the art at release: what was verified |
+| `refusals`, `not_checked`, `hearsay` | risk assessed; open risks explicit | — | known limitations disclosed, not hidden |
+| `calibration` (planted bugs: tests, AI) + `human_calibration` (drill) | controls are verified to work, per change | reviewer is not a rubber stamp | diligence of the review process |
+| `signoff` (named human, predictions committed before reveal, residual risk) | **approved** by an accountable person; segregation of duties (author = agent, approver = human) | second party is a named human | who accepted which risk, and when |
+| `quarantine` (author text quoted, never obeyed) | integrity of the review input | — | — |
+| in-toto Statement + signature + `et verify` | change record is tamper-evident and replayable for audit | verifiable provenance of the review | evidence a defendant can produce |
+
+Demo limitation: the signing key is a generated demo key (`out/attest/`), not a person's identity. In production the signer is the named reviewer's key (or Sigstore keyless with their OIDC identity).
+
 ## Limits (what this does NOT solve)
 - Doesn't judge architecture fit or long-term maintainability well.
 - Requires a buildable, testable codebase (needs a sandbox that can run base and PR).

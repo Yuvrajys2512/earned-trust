@@ -44,5 +44,7 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | F-38 | Agent fixes the bug and adds an unrequested global behavior change (drop all out-of-compilation diagnostics), then writes a test that locks it in | seen | #2283, L-17 | Counterfactual run (head minus the hunk) attributes the change; the scope-drift BC goes to the human as a refusal |
 | F-39 | Reviewer's (our) hypothesis about a defect is wrong, twice | seen (by us) | L-17 | Hypotheses are hearsay until a receipt runs; keep refuted ones as fact tests |
 | F-40 | Scoreboard metric inflated by counting pre-existing tests as "agent tests" (22/31 placebo instead of 6/15) | seen (by us), fixed before publishing | `et index` | Count only test methods the PR adds (from the diff) |
+| F-41 | Prompt injection in author text silences a real finding (AI reviewer returns `{"findings": []}` as told) | seen (Gemma, naive pipeline, 2/3 on M06) | L-20 | Never give author text to the reviewer; quarantine it for the human; verdict from executed tests |
+| F-42 | Invisible payloads (HTML comment, Unicode tag chars) make the PR description a human sees differ from what a model reads | seen (our sample) | L-20 | Quarantine decodes and shows hidden text; render "what the model would read" next to "what you see" |
 
 Add rows as the build surfaces new ones (especially failures of *our own* reviewer).
