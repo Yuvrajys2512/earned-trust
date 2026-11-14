@@ -1,10 +1,10 @@
 # 11 — Submission text (draft, Sat 14 Nov ~18:50 Helsinki)
 
-Paste-ready. Every number is from `HANDOFF.md` §3 (executed sources). Fill the three `TODO` links before submitting. Submit by **Sun 09:30 Helsinki**.
+Paste-ready. Every number is from `HANDOFF.md` §3 (executed sources). Fill the remaining `TODO` link (video) before submitting. Submit by **Sun 09:30 Helsinki**.
 
 - Live demo: https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run
 - Concept card: https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run/card.html
-- Repo: TODO (no remote yet)
+- Repo: https://github.com/Yuvrajys2512/earned-trust
 - Video (≤ 3 min): TODO
 - Team: Yuvraj Srivastava (solo)
 
