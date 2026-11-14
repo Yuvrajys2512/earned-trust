@@ -31,6 +31,7 @@ Deliverable. Log every surprise, dead end and insight as it happens — short, d
 - L-23 Our own page over-claimed: pre-existing tests counted as the agent's placebos
 - L-24 Dry run on the live URL; a deploy isn't live the second it says so
 - L-25 A count-up animation can lie in a freeze-frame (UI pass)
+- L-26 The live site served the previous deploy to returning browsers (1970 Last-Modified → 304)
 
 ---
 
@@ -44,6 +45,12 @@ Evidence: <command / file / link>
 ```
 
 ---
+
+### L-26 — The live site served the previous deploy to returning browsers (Sat 14 Nov ~20:35 Helsinki)
+What happened: after the UI pass the owner opened the live URL and saw the old UI, while `curl` showed the new pages. Modal image files all have mtime 1970-01-01, so `python -m http.server` sent `Last-Modified: 1970` on every deploy and answered the browser's `If-Modified-Since` with **304 Not Modified**. A browser with the old page cached was told "nothing changed". With no Cache-Control and a 1970 Last-Modified, browsers may also treat the cached copy as fresh for a long time without asking. The redeploy alone didn't fix it either: the old container stayed warm (our own polling kept it alive) until we stopped it with `modal container stop -y`.
+What we learned: "the server has the new file" and "the viewer sees the new file" are different facts (L-24 again, one layer further out). This may also explain the "~20 s lag" seen in L-24.
+What changed: `deploy/serve.py` (ignores If-Modified-Since, drops Last-Modified, sends `Cache-Control: no-cache, must-revalidate`). Publish routine: deploy → stop the old container if still warm → check headers. A browser that cached the old page needs one hard refresh (Ctrl+F5).
+Evidence: `curl -sI -H "If-Modified-Since: Thu, 01 Jan 1970 00:00:00 GMT" $B/` → `304 Not Modified` before, `200 OK` + `Cache-Control: no-cache, must-revalidate` after.
 
 ### L-25 — A count-up animation can lie in a freeze-frame (Sat 14 Nov ~20:00 Helsinki, UI pass)
 What happened: we added a presentation layer (`ui/fx.css`, `ui/fx.js`, inlined into every page by `ui_template`): a test-replay "receipt machine", predict/reveal stamps, a Time Machine timeline, a planted-bug matrix, a 237 → 9 file triage, and a printed receipt on signing. The first render check caught the stat "6 / 10" mid count-up reading **"5 / 8"**, and "3 questions" for 4. A video frame or a screenshot of that is a false number on our own page. Two more surprises: headless Edge `--virtual-time-budget` doesn't play animations faithfully (and drops `?query`/`#hash` on file URLs), so we checked in real Chrome over a local server; and at 390 px width the review pages already scrolled sideways (story/trust tables, `.two` lists) before this pass.

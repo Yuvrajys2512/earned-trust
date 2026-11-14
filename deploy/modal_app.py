@@ -11,7 +11,9 @@ import modal
 
 SITE = Path(__file__).resolve().parents[1] / "out" / "site"
 
-image = modal.Image.debian_slim(python_version="3.12").add_local_dir(str(SITE), "/site")
+image = (modal.Image.debian_slim(python_version="3.12")
+         .add_local_file(str(Path(__file__).with_name("serve.py")), "/serve.py")
+         .add_local_dir(str(SITE), "/site"))
 app = modal.App("earned-trust-receipts", image=image)
 
 
@@ -20,4 +22,4 @@ app = modal.App("earned-trust-receipts", image=image)
 @modal.web_server(port=8000, startup_timeout=60)
 def site():
     import subprocess
-    subprocess.Popen(["python", "-m", "http.server", "8000", "--bind", "0.0.0.0", "--directory", "/site"])
+    subprocess.Popen(["python", "/serve.py", "8000", "/site"])  # no-cache, no 1970 Last-Modified (L-26)
