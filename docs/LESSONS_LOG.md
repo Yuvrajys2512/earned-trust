@@ -16,6 +16,15 @@ Evidence: <command / file / link>
 
 ---
 
+### L-16 — The human gets drilled too, and the first drill exposed a bias in our own questions (Sat 14 Nov 15:05 Helsinki)
+What happened: B3 adds one drill question to the #2234 page, built from planted mutant M04 (`break` for `continue` in the mixed-key skip). Its behavior was **executed**, not described: `EtDrillTests.Drill_MixedKeyInTheMiddle_LaterMembersStillSerialized` (class `First`/`Second("b")`/`Third`) passes on the PR head (formatter writes First + Third, array header 2) and fails with M04 planted (writes only First; Third is silently dropped). The test suite missed M04 (12/12 pass); Gemma caught it. The page says up front "1 of these 4 questions is a drill", numbers questions Q1–Q4 (no BC ids until reveal), and discloses the drill only after the human decides. `caught` = decision is needs-change or reject; a miss doesn't block signing but writes `MISSED DRILL` into `signoff.flags` and `human_calibration {drills, caught, results}` into the hashed record.
+What we learned:
+1. **Calibrating only the AI is half the job.** The same planted bug now measures three screeners on one page: tests (missed), AI reviewer (caught), human (recorded). A signature carries proof of attention, not just a name.
+2. **Building the drill exposed a flaw in our own spec: every true answer in the #2234 hand-written spec was option "a"** (2297 AI spec: every one "b"). A rubber-stamper who always picks the first option would get zero mismatches. Options are now shuffled with a seed from the record hash (reproducible). Headless test, "always first option + Accept": #2234 now shows 1 mismatch and a flagged signature; #2297 3 mismatches.
+3. Drill evidence must never be shown "as the PR" with the real output beside it: before disclosure the page shows only the planted formatter; the real-vs-planted diff appears after.
+What changed: `et drill 2234` (`src/earned_trust/drill.py`, `receipts/2234/drills/EtDrillTests.cs`, kept out of the receipts glob so the ledger is unchanged), `receipts/2234/drills.json`, record `drills` + `human_calibration`, UI disclosure card.
+Evidence: `out/2234/drills/drill.json` (head Passed / M04 Failed, TRX hashes, both generated formatters). Limitation: the drill answer is in the page source; a real deployment serves drills server-side (F-36).
+
 ### L-15 — The model can write the spec; what it can't do is go beyond the ledger (Sat 14 Nov 14:25 Helsinki)
 What happened: `et spec <pr>` gives Gemma 4 31B the requirement, the diff of the human-lane files (no docs, no commit messages, no PR text) and the executed ledger; it returns `review.ai.json` in the same schema as our hand-curated spec. 3 prompt versions × 3 runs × 2 PRs = 18 runs; 3 got no answer (Gemma HTTP 500 / read timeouts, recorded as unknown). Scored by `uv run et spec-score` (re-scores every saved run with one rule) plus hand grading of the columns marked *(hand)*.
 

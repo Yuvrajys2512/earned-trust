@@ -38,5 +38,8 @@ Deliverable (brief item 6): failure modes **we saw** in the agent's work and in 
 | F-32 | AI reviewer equates "a crash is fixed" with "the requirement is fixed" and doesn't refuse | seen (Gemma, v1 2/2) | L-15, 2234 | Feed it executed git facts (regression not in history): 6/6 refuse afterwards |
 | F-33 | Agreement metric (cited-test overlap) reports 3/3 while the headline finding is missed | seen (by us) | L-15 | Score refusals, tags and question honesty by hand; publish both |
 | F-34 | Model frames behavior as the absence of the old failure ("no longer crashes") and hides what is produced now; a prompt rule doesn't change it | seen (Gemma, v2+v3 6/6) | L-15 | The ledger signal / receipt test names carry the real behavior into the question; human-written receipts stay necessary |
+| F-35 | Answer-position bias: the spec author puts the true answer first (2234 human spec: a, a, a), so "always pick a" signs with zero mismatches | seen (by us) | L-16 | Options shuffled per question with a seed from the record hash; the drill catches rubber-stamping anyway |
+| F-36 | Drill leakage: the drill's identity and answer are in the static page source | known limitation | L-16 | Serve drills from a server / sealed envelope; demo discloses this |
+| F-37 | Human rubber-stamps: accepts every reveal without reading | measured, not prevented | L-16 drill | Disclosed drill with executed planted bug; a miss flags the signature in the record |
 
 Add rows as the build surfaces new ones (especially failures of *our own* reviewer).

@@ -74,6 +74,8 @@ details summary{cursor:pointer;color:var(--accent)}
 ul.tight{margin:6px 0;padding-left:20px} ul.tight li{margin:3px 0}
 .refusal{border-left:4px solid var(--warn);}
 .signed{border:2px solid var(--ok)}
+.drill-ok{border:2px solid var(--ok)} .drill-miss{border:2px solid var(--bad)}
+.drillnote{background:var(--warn-bg);border-color:var(--warn)}
 .quote{border-left:3px solid var(--line);padding-left:10px;font-style:italic;color:var(--muted)}
 .theme{background:transparent;color:var(--muted);border:1px solid var(--line);padding:4px 8px;font-size:12px}
 </style>
@@ -113,7 +115,8 @@ function render(){
 
   // --- summary
   app.append($(`<h2>What was proven before you arrived</h2>`));
-  const nq = R.behavior_changes.length;
+  const DR = R.drills||[];
+  const nq = R.behavior_changes.length + DR.length;
   app.append($(`<div class="stats">
     <div class="stat"><div class="n">${a.placebo||0} / ${agentTotal}</div><div class="l">of the agent's tests are <b>placebos</b>: they pass on the old code, so they prove nothing about this PR</div></div>
     <div class="stat"><div class="n">${(a.catching||0)+(rv.catching||0)}</div><div class="l">catching tests (fail before, pass after) = <b>proven behavior changes</b>, ${rv.catching||0} written by the reviewer</div></div>
@@ -135,9 +138,12 @@ function render(){
   if(R.time_machine) app.append(timeMachineCard(R.time_machine));
 
   // --- questions
-  app.append($(`<h2>Predict, then see — ${nq} behavior changes</h2>`));
+  app.append($(`<h2>Predict, then see — ${nq} questions</h2>`));
   app.append($(`<p class="muted" style="margin-top:-4px">Pick what <b>should</b> happen before the system shows what the PR <b>does</b>. Your prediction is hashed and locked first, so the AI can't anchor you. Every mismatch is the review.</p>`));
-  R.behavior_changes.forEach(bc=>app.append(questionCard(bc)));
+  if(DR.length) app.append($(`<div class="card drillnote"><span class="pill p-warn">drill</span> <b>${DR.length} of these ${nq} questions ${DR.length>1?'are drills':'is a drill'}</b>: a bug we planted in the code on purpose and executed, like the test images airport screeners are shown. You'll be told which one after you decide on it. The AI reviewer and the tests were drilled the same way (see "How far to trust"). Missing it doesn't block signing; it is recorded with your signature.</div>`));
+  const qs = [...R.behavior_changes];
+  DR.forEach(d=>qs.splice(Math.min(d.position??1, qs.length), 0, {...d, _drill:true, status:'proven', proven_by:'catching', evidence:[]}));
+  qs.forEach((bc,i)=>app.append(questionCard(bc, `Q${i+1}`)));
 
   // --- refusals
   app.append($(`<h2>What the AI refused to decide</h2>`));
@@ -213,10 +219,10 @@ function calibrationCard(cal){
   return el;
 }
 
-function questionCard(bc){
+function questionCard(bc, label){
   const q = bc.question, id = bc.id;
   const el = $(`<div class="card" id="q-${id}">
-    <div class="row" style="justify-content:space-between"><div class="row"><span class="pill p-info">${esc(id)}</span>${linkPill(bc.requirement_link)}
+    <div class="row" style="justify-content:space-between"><div class="row"><span class="pill p-info" data-label>${esc(label)}</span>${linkPill(bc.requirement_link)}
       ${bc.status!=='proven'?'<span class="pill p-bad">unproven · hearsay</span>'
         :bc.proven_by==='broken-by-pr'?'<span class="pill p-bad">proven regression</span>'
         :bc.proven_by==='failing-both'?'<span class="pill p-warn">proven gap</span>'
@@ -227,8 +233,12 @@ function questionCard(bc){
     <div class="row"><button data-act="commit" disabled>Lock prediction &amp; reveal</button><span class="hash" data-hash></span></div>
     <div class="reveal" hidden></div></div>`);
   const opts = el.querySelector('.opts');
-  q.options.forEach(o=>{
-    const lab = $(`<label class="opt"><input type="radio" name="o-${id}" value="${esc(o.id)}"><span><b>${esc(o.id)}.</b> ${esc(o.text)}</span></label>`);
+  // Display order is shuffled (seeded by the record hash + question id, so it's reproducible): the spec authors
+  // tended to put the true answer first, and "always pick a" must not be a way to sign without mismatches (F-35).
+  const fnv = str=>{ let h=2166136261; for(const c of str){ h^=c.charCodeAt(0); h=Math.imul(h,16777619)>>>0; } return h; };
+  const order = [...q.options].sort((x,y)=>fnv(`${R.evidence_sha256}|${id}|${x.id}`)-fnv(`${R.evidence_sha256}|${id}|${y.id}`));
+  order.forEach((o,i)=>{
+    const lab = $(`<label class="opt"><input type="radio" name="o-${id}" value="${esc(o.id)}"><span><b>${'abcdefgh'[i]}.</b> ${esc(o.text)}</span></label>`);
     lab.querySelector('input').onchange = ()=>{ el.querySelector('[data-act=commit]').disabled=false; };
     opts.append(lab);
   });
@@ -241,6 +251,7 @@ function questionCard(bc){
     el.querySelectorAll('.opt').forEach(l=>{ l.classList.add('locked'); const i=l.querySelector('input'); i.disabled=true;
       if(i.value===pick) l.classList.add('chosen'); if(i.value===q.revealed) l.classList.add('truth'); });
     el.querySelector('[data-act=commit]').remove();
+    if(!bc._drill) el.querySelector('[data-label]').textContent = `${label} · ${id}`;
     showReveal(el, bc);
   };
   return el;
@@ -255,9 +266,12 @@ function showReveal(el, bc){
   rv.append($(`<p style="margin:0 0 8px"><b>What the PR does:</b> ${esc(q.reveal_text)}</p>`));
   rv.append($(`<p class="muted" style="margin:0 0 8px">${esc(bc.link_why)}</p>`));
   const t = $(`<table><thead><tr><th>Receipt (test)</th><th>Base</th><th>Head</th><th></th></tr></thead><tbody></tbody></table>`);
-  bc.evidence.forEach(e=>t.querySelector('tbody').append($(`<tr><td class="tname">${esc(e.ledger_id)} ${esc(e.test)}${e.signal?`<div class="muted" style="font-family:var(--sans)">${esc(e.signal)}</div>`:''}</td><td>${outcome(e.base)}</td><td>${outcome(e.head)}</td><td>${verdictPill(e.verdict)}</td></tr>`)));
-  rv.append(t);
-  for(const [name, sides] of Object.entries(bc.generated_output||{})){
+  if(bc.evidence.length) bc.evidence.forEach(e=>t.querySelector('tbody').append($(`<tr><td class="tname">${esc(e.ledger_id)} ${esc(e.test)}${e.signal?`<div class="muted" style="font-family:var(--sans)">${esc(e.signal)}</div>`:''}</td><td>${outcome(e.base)}</td><td>${outcome(e.head)}</td><td>${verdictPill(e.verdict)}</td></tr>`)));
+  if(bc.evidence.length) rv.append(t);
+  if(bc._drill){   // before disclosure: show only what "the PR" produces (the planted code); the real output would give it away
+    for(const [name, sides] of Object.entries(bc.generated_output||{}))
+      rv.append($(`<details style="margin-top:8px" open><summary>Generator output: ${esc(name)}</summary><pre>${esc(sides.head||'(none)')}</pre></details>`));
+  } else for(const [name, sides] of Object.entries(bc.generated_output||{})){
     rv.append($(`<details style="margin-top:8px"><summary>Generator output: ${esc(name)} (base vs head)</summary><div class="two">
       <div><div class="muted">base</div><pre>${esc(sides.base||'(none)')}</pre></div>
       <div><div class="muted">head</div><pre>${esc(sides.head||'(none)')}</pre></div></div></details>`));
@@ -265,12 +279,31 @@ function showReveal(el, bc){
   const d = $(`<div style="margin-top:12px"><label class="f">Your decision on ${esc(bc.id)}</label>
     <div class="row"><button class="ghost" data-d="accept">Accept</button><button class="ghost" data-d="needs-change">Needs change</button><button class="ghost" data-d="reject">Reject</button></div>
     <label class="f">Why (one line, goes in the record)</label><input type="text" data-note placeholder="${ans.match?'e.g. expected behavior, covered by tests':'e.g. dropping a member silently is a contract change; ask the author to fail instead'}"></div>`);
-  d.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ S.decisions[bc.id]=b.dataset.d;
+  d.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ if(bc._drill && S.decisions[bc.id]) return; S.decisions[bc.id]=b.dataset.d;
+    if(bc._drill){ d.querySelectorAll('[data-d]').forEach(x=>x.disabled=true); rv.append(drillDisclosure(bc)); }
     d.querySelectorAll('[data-d]').forEach(x=>{x.style.background='';x.style.color='';});
     b.style.background='var(--ink)'; b.style.color='var(--paper)'; refreshSign(); });
   d.querySelector('[data-note]').oninput = e => { S.notes[bc.id]=e.target.value; };
   rv.append(d);
   refreshSign();
+}
+
+function drillCaught(id){ return ['needs-change','reject'].includes(S.decisions[id]); }
+
+function drillDisclosure(bc){
+  const D = bc.disclosure, caught = drillCaught(bc.id), os = D.other_screeners||{};
+  const scr = Object.entries(os).map(([k,v])=>{ const c = v===true||v==='killed'||v==='killed-by-compiler';
+    return `<li>${k==='tests'?'The test suite (agent tests + our receipts)':'AI reviewer '+esc(k.split(':')[1])}: <b>${c?'caught it':'missed it'}</b></li>`; }).join('');
+  const sides = Object.values(bc.generated_output||{})[0]||{};
+  return $(`<div class="card ${caught?'drill-ok':'drill-miss'}" style="margin-top:12px">
+    <div class="row"><span class="pill p-warn">drill</span><b>This was the drill.</b> ${caught?'<span class="pill p-ok">you caught it</span>':'<span class="pill p-bad">missed: your signature will be flagged</span>'}</div>
+    <p style="margin:8px 0">We planted bug <span class="mono">${esc(D.mutant.id)}</span> (${esc(D.mutant.description)}). The real PR keeps First and Third.
+      Same drill test, executed: real PR <b>${esc(D.real_pr.outcome)}</b>, planted <b>${esc(D.planted.outcome)}</b>.</p>
+    <ul class="tight"><li>You: <b>${caught?'caught it':'accepted it'}</b> (prediction ${esc(S.answers[bc.id].prediction)}, decision ${esc(S.decisions[bc.id])})</li>${scr}</ul>
+    <details><summary>Generated formatter: real PR vs planted</summary><div class="two">
+      <div><div class="muted">real PR</div><pre>${esc(sides.base||'(none)')}</pre></div>
+      <div><div class="muted">planted ${esc(D.mutant.id)}</div><pre>${esc(sides.head||'(none)')}</pre></div></div></details>
+    <p class="hash">drill test ${esc(D.test)} · trx sha256 ${esc((D.planted.trx_sha256||'').slice(0,16))}…</p></div>`);
 }
 
 function signPanel(){
@@ -293,6 +326,7 @@ function refreshSign(){
   const el = document.getElementById('sign'); if(!el) return;
   const missing = [];
   R.behavior_changes.forEach(bc=>{ if(!S.answers[bc.id]) missing.push(`predict ${bc.id}`); else if(!S.decisions[bc.id]) missing.push(`decide ${bc.id}`); });
+  (R.drills||[]).forEach(dq=>{ if(!S.answers[dq.id]||!S.decisions[dq.id]) missing.push('answer every question'); });
   if(!el.querySelector('[data-risk]').value.trim()) missing.push('state residual risk');
   if(!el.querySelector('[data-name]').value.trim()) missing.push('your name');
   el.querySelector('[data-why]').textContent = missing.length ? 'Still needed: '+missing.join(' · ') : 'Ready. Signing hashes the full record, including what you predicted before each reveal.';
@@ -308,7 +342,14 @@ async function doSign(){
   rec.signoff = { name: el.querySelector('[data-name]').value.trim(), role: el.querySelector('[data-role]').value.trim(),
     timestamp: new Date().toISOString(), residual_risk: el.querySelector('[data-risk]').value.trim(),
     statement: 'I predicted each behavior before it was revealed, reviewed the receipts listed, and accept the decisions and residual risk above. The AI review is advice with evidence, not the approval.',
-    mismatches: rec.behavior_changes.filter(b=>!b.match).map(b=>b.id) };
+    mismatches: rec.behavior_changes.filter(b=>!b.match).map(b=>b.id), flags: [] };
+  const results = (rec.drills||[]).map(dq=>{ const a=S.answers[dq.id];
+    return {id:dq.id, mutant:dq.disclosure.mutant.id, prediction:a.prediction, prediction_commit_sha256:a.commit_sha256,
+            decision:S.decisions[dq.id], caught:drillCaught(dq.id)}; });
+  if(results.length){
+    rec.human_calibration = {...rec.human_calibration, status:'measured', caught:results.filter(r=>r.caught).length, results};
+    results.filter(r=>!r.caught).forEach(r=>rec.signoff.flags.push(`MISSED DRILL ${r.id} (${r.mutant}): the signer accepted a planted bug`));
+  }
   const body = canon(rec);
   rec.record_sha256 = await sha256(body);
   const blob = new Blob([JSON.stringify(rec,null,2)],{type:'application/json'});
@@ -318,6 +359,8 @@ async function doSign(){
   el.querySelector('[data-out]').innerHTML = `<p style="margin-top:14px"><span class="pill p-ok">signed</span> by <b>${esc(rec.signoff.name)}</b> · ${esc(rec.signoff.timestamp)}</p>
     <p class="hash">record sha256 ${rec.record_sha256}</p>
     <p>${rec.signoff.mismatches.length} mismatch(es) caught by prediction: ${rec.signoff.mismatches.join(', ')||'none'}</p>
+    ${rec.human_calibration&&rec.human_calibration.status==='measured'?`<p>Human drill: caught <b>${rec.human_calibration.caught}/${rec.human_calibration.drills}</b>
+      ${rec.signoff.flags.length?`<br><span class="pill p-bad">flagged</span> ${rec.signoff.flags.map(esc).join('<br>')}`:''}</p>`:''}
     <a href="${url}" download="${fname}"><button>Download signed record</button></a>`;
   el.querySelector('[data-act=sign]').disabled = true;
   if (window.ET_SUBMIT) window.ET_SUBMIT(rec);

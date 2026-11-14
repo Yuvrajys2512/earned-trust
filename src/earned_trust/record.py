@@ -59,8 +59,35 @@ def calibration_block(cal: dict | None) -> dict:
     }
 
 
+def drill_block(drills: dict | None, run: dict | None, calibration: dict | None) -> tuple[list, dict]:
+    """Human drill: a planted-bug question with executed evidence; refuses to build without the execution."""
+    if not drills:
+        return [], {"status": "no-drill", "note": "No drill on this PR: the human's attention is unmeasured."}
+    if not run or not run.get("verdict", "").startswith("executed"):
+        return [], {"status": "no-drill", "note": "Drill spec exists but its execution is missing or unexpected; not shown."}
+    rows = {r["id"]: r for r in (calibration or {}).get("summary", {}).get("rows", [])}
+    out = []
+    for d in drills["drills"]:
+        row = rows.get(d["mutant"], {})
+        out.append({
+            "id": d["id"], "position": drills.get("position", 1), "requirement_link": d["requirement_link"],
+            "link_why": d["link_why"], "question": d["question"],
+            "generated_output": {"Foo formatter": {"base": run["head"]["generated"], "head": run["planted"]["generated"]}},
+            "disclosure": {
+                "mutant": run["mutant"], "test": run["test"],
+                "real_pr": {"outcome": run["head"]["outcome"], "trx_sha256": run["head"]["trx_sha256"]},
+                "planted": {"outcome": run["planted"]["outcome"], "trx_sha256": run["planted"]["trx_sha256"],
+                            "message": run["planted"]["message"]},
+                "other_screeners": {k: v for k, v in row.items() if k == "tests" or k.startswith("reviewer:")},
+            },
+        })
+    return out, {"status": "pending-signoff", "drills": len(out), "caught": None,
+                 "rule": "caught = the human's decision on the drill is needs-change or reject; "
+                         "a missed drill does not block signing but flags the signature"}
+
+
 def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, calibration: dict | None = None,
-                 budget: dict | None = None) -> dict:
+                 budget: dict | None = None, drills: dict | None = None, drill_run: dict | None = None) -> dict:
     tests = _by_test(ledger)
     hearsay: list[str] = []
 
@@ -173,6 +200,8 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
         "calibration": calibration_block(calibration),
         "attention_budget": ab,
         "hearsay": hearsay,
+        "drills": drill_block(drills, drill_run, calibration)[0],
+        "human_calibration": drill_block(drills, drill_run, calibration)[1],
         "signoff": None,
     }
     body = json.dumps(record, sort_keys=True, separators=(",", ":")).encode()

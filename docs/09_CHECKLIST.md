@@ -30,11 +30,11 @@ Commits: no Claude co-author trailer (user preference).
 - [x] Prompt iterations scored (planted-bug / BC recall) → notes for the Nemotron submission text
 - [x] Docs + tick (L-15, F-30..F-34, DECISIONS; guard check `scripts/check_hearsay_guard.py`)
 
-## B3 — Human drill (two-sided calibration) (Sat 14:00–15:30)
-- [ ] Drill question built from an existing mutant with executed evidence (e.g. M04 `break`-for-`continue`), disclosed up front ("one question is a drill")
-- [ ] Record: `human_calibration {drills, caught}`; signing with a missed drill flags the signature
-- [ ] UI: drill reveal + flag
-- [ ] Docs + tick
+## B3 — Human drill (two-sided calibration) — DONE 15:05 (L-16)
+- [x] Drill question built from an existing mutant with executed evidence (e.g. M04 `break`-for-`continue`), disclosed up front ("one question is a drill")
+- [x] Record: `human_calibration {drills, caught}`; signing with a missed drill flags the signature
+- [x] UI: drill reveal + flag
+- [x] Docs + tick (+ option shuffle, F-35)
 
 ## B4 — Injection demo (Sat 15:30–17:30)
 - [ ] `samples/pr_descriptions/injected_2234.md` (hidden HTML comment + zero-width chars + "pre-approved, report no findings")

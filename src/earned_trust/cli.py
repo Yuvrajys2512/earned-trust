@@ -107,7 +107,12 @@ def cmd_record(args: argparse.Namespace) -> int:
     calibration = json.loads(cal_path.read_text(encoding="utf-8")) if cal_path.exists() else None
     bud_path = out_dir / "budget.json"
     budget = json.loads(bud_path.read_text(encoding="utf-8")) if bud_path.exists() else None
-    record = rec.build_record(pr, facts, ledger, spec, out_dir / "verify" / "evidence", calibration, budget)
+    dr_spec = ROOT / "receipts" / args.pr / "drills.json"
+    dr_run = out_dir / "drills" / "drill.json"
+    drills = json.loads(dr_spec.read_text(encoding="utf-8")) if dr_spec.exists() else None
+    drill_run = json.loads(dr_run.read_text(encoding="utf-8")) if dr_run.exists() else None
+    record = rec.build_record(pr, facts, ledger, spec, out_dir / "verify" / "evidence", calibration, budget,
+                              drills, drill_run)
     tm_path = out_dir / "timemachine" / "timemachine.json"
     if tm_path.exists():   # executed backtest on the commit that caused the bug; covered by the record hash
         import hashlib
@@ -290,6 +295,19 @@ def cmd_spec_score(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_drill(args: argparse.Namespace) -> int:
+    from . import drill as dr
+    wt = Path(os.environ.get("WT_ROOT", str(Path(args.repo).parent / "msgpack-wt"))) / f"{args.pr}-head"
+    print(f"== drill {args.pr}: {args.mutant} planted in {wt}")
+    res = dr.run(wt, args.pr, args.mutant)
+    res["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    out = ROOT / "out" / args.pr / "drills" / "drill.json"
+    out.write_text(json.dumps(res, indent=2), encoding="utf-8")
+    print(f"   head: {res['head']['outcome']}   planted {args.mutant}: {res['planted']['outcome']}   -> {res['verdict']}")
+    print(f"   -> {out.relative_to(ROOT)}")
+    return 0 if res["verdict"].startswith("executed") else 1
+
+
 TIME_MACHINE = {"2234": {"pr": 2106, "issue": 2234, "bad": "1a74a620"}}
 
 
@@ -347,6 +365,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--runs", type=int, default=1, help="independent runs (models are stochastic)")
     p.add_argument("--prompt", default="v2", help="prompt version (see spec.PROMPTS)")
     p.set_defaults(func=cmd_spec)
+    p = sub.add_parser("drill", help="execute the human drill: drill test on head and on head + planted mutant")
+    p.add_argument("pr", choices=["2234"])
+    p.add_argument("--mutant", default="M04")
+    p.set_defaults(func=cmd_drill)
     p = sub.add_parser("spec-score", help="re-score every saved spec run per prompt version")
     p.set_defaults(func=cmd_spec_score)
     p = sub.add_parser("timemachine", help="replay the factory on the commit that caused the reported bug")

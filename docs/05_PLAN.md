@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** B2 done (Sat 14:25 Helsinki): Gemma writes the review spec from requirement + diff + ledger + git facts (never PR text); 3 prompt versions scored, 0 invented tests, v2+ refuses "is #2234 fixed" 6/6 (L-15). ~1.5 h behind: next B3 human drill, B4 injection; B5 trimmed to 2283 receipt + scoreboard, B6 optional. (Update this line after every round.)
+**Now:** B2 + B3 done (Sat 15:05 Helsinki). B3: disclosed human drill from executed mutant M04 (tests missed, Gemma caught); a miss flags the signature; options shuffled after finding all true answers were "a" (L-16). Next: B4 injection demo, then trimmed B5 (2283 receipt + scoreboard), B6 optional. (Update this line after every round.)
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 

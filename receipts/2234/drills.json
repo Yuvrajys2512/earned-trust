@@ -1,0 +1,24 @@
+{
+  "_about": "Human drill for ju26-issue-2234 (B3). One question on the review page is built from a planted mutant whose behavior was executed (out/2234/drills/drill.json). The page discloses that one question is a drill and reveals which after the human decides. caught = the human did not accept the planted behavior (decision needs-change or reject).",
+  "position": 2,
+  "drills": [
+    {
+      "id": "DRILL-1",
+      "mutant": "M04",
+      "requirement_link": "collateral",
+      "link_why": "Skipping a member whose key kind doesn't match is how the PR avoids the analyzer/generator crash on mixed keys.",
+      "evidence_file": "planted",
+      "question": {
+        "context": "[MessagePackObject]\npublic class Foo\n{\n    [Key(0)]   public int First  { get; set; }\n    [Key(\"b\")] public int Second { get; set; }   // wrong key kind: MsgPack diagnostic\n    [Key(1)]   public int Third  { get; set; }\n}",
+        "prompt": "Second's key kind doesn't match the others. After this PR, what does the generated formatter for Foo serialize?",
+        "options": [
+          {"id": "a", "text": "First and Third (only the mismatched member is skipped)"},
+          {"id": "b", "text": "Only First (everything after the mismatched member is dropped)"},
+          {"id": "c", "text": "First, Second and Third"}
+        ],
+        "revealed": "b",
+        "reveal_text": "The generated formatter writes an array of 1: only First. Third is silently dropped, even though its key is valid."
+      }
+    }
+  ]
+}
