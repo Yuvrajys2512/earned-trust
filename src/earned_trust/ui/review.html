@@ -84,6 +84,7 @@ ul.tight{margin:6px 0;padding-left:20px} ul.tight li{margin:3px 0}
 <body>
 <div class="wrap" id="app"></div>
 <script id="record" type="application/json">/*RECORD_JSON*/</script>
+<script>/*TIER_JS*/</script>
 <script>
 const R = JSON.parse(document.getElementById('record').textContent);
 const S = { answers:{}, decisions:{}, notes:{} };
@@ -114,6 +115,7 @@ function render(){
     <p class="muted" style="margin:0">Author: ${esc(R.author.label)}. Every claim below links to something that was <b>executed</b>. Anything else is labelled hearsay.</p>
     <p class="muted" style="margin:4px 0 0">Review spec written by: <b>${esc(R.reviewer.spec_author)}</b>${R.reviewer.model?' · inputs: requirement + diff + executed ledger; PR text never shown':''}.</p></div>`));
 
+  if(R.tier) app.append($(tierCard(R.tier)));
   // --- summary
   app.append($(`<h2>What was proven before you arrived</h2>`));
   const DR = R.drills||[];

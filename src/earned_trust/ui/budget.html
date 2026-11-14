@@ -72,6 +72,7 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
     <button class="theme" id="theme" type="button">Theme</button>
   </header>
   <p class="req" id="req"></p>
+  <div id="tier"></div>
   <p class="muted">Machines clear what they can re-execute. Human minutes go only to what no machine can give a receipt for. Whatever doesn't fit your budget is listed as <b>knowingly unread</b>, never hidden.</p>
 
   <div class="stats" id="stats"></div>
@@ -90,11 +91,13 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
   <h2>Cleared by machine, with receipts</h2>
   <div id="machine"></div>
 </div>
+<script>/*TIER_JS*/</script>
 <script>
 const B = JSON.parse(document.getElementById('budget').textContent);
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const T = B.totals;
+if (B.tier) $('tier').innerHTML = tierCard(B.tier);
 
 $('sub').textContent = `${B.requirement.id} · ${B.base.slice(0,8)}..${B.head}`;
 $('req').innerHTML = `Requirement <a href="${esc(B.requirement.url)}">${esc(B.requirement.id)}</a>: ${esc(B.requirement.title)}`;

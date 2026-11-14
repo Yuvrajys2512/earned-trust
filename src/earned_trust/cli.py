@@ -178,6 +178,13 @@ def cmd_record(args: argparse.Namespace) -> int:
         record.pop("evidence_sha256", None)
         body = json.dumps(record, sort_keys=True, separators=(",", ":")).encode()
         record["evidence_sha256"] = hashlib.sha256(body).hexdigest()
+    if args.spec == "human":   # risk tier: named rules over executed facts; inside the hash, so the signer sees why
+        import hashlib
+        record.pop("evidence_sha256", None)
+        tier = compute_tier(args.pr, args.repo, record)
+        record["tier"] = tier
+        record["checked"].append(f"Risk router: {tier['tier']} {tier['tier_name']} because " + "; ".join(tier["why"])[:400])
+        record["evidence_sha256"] = hashlib.sha256(json.dumps(record, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     (dest / "record.json").write_text(json.dumps(record, indent=2), encoding="utf-8")
     tpl = ui_template("review.html")
     embedded = json.dumps(record).replace("</", "<\\/")
@@ -192,13 +199,46 @@ def cmd_record(args: argparse.Namespace) -> int:
     return 0
 
 
+def compute_tier(key: str, repo: str, record: dict | None = None) -> dict:
+    """Run the risk router for one PR and write out/<pr>/tier.json. `record` is the in-memory record (without its tier)."""
+    from . import tier as tr
+    pr = PRS[key]
+    d = ROOT / "out" / key
+    load = lambda p: json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    facts = load(d / "facts.json")
+    if record is None:
+        record = load(d / "record.json")
+        if record:
+            record = {k: v for k, v in record.items() if k not in ("tier", "evidence_sha256")}
+    head = gf.git(repo, "rev-parse", "--short=8", gf.resolve_branch(repo, pr.branch)).strip()
+    res = tr.build(key, repo, pr.base, head, facts, record=record, budget=load(d / "budget.json"),
+                   ledger=load(d / "ledger.json"), calibration=load(d / "calibration.json"), trust=load(ROOT / "out" / "trust.json"))
+    res["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    (d / "tier.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
+    return res
+
+
+def cmd_tier(args: argparse.Namespace) -> int:
+    keys = list(PRS) if args.pr == "all" else [args.pr]
+    for key in keys:
+        res = compute_tier(key, args.repo)
+        print(f"== tier #{key}: {res['tier']} {res['tier_name']}"
+              + (f"  (would be {res['tier_without_circuit_breaker']} without the circuit breaker)" if res["tier_without_circuit_breaker"] else ""))
+        for r in res["rules"]:
+            print(f"   [{'x' if r['fired'] else ' '}] {r['tier']} {r['id']:<26} {r['fact'][:150]}")
+        print("   lanes: " + ", ".join(f"{t} {v['files']} files/{v['changed_lines']} lines" for t, v in res["lanes"].items()))
+        print(f"   -> out/{key}/tier.json")
+    return 0
+
+
 def ui_template(name: str) -> str:
     """Load a UI template with the shared FX layer (fx.css / fx.js) inlined, so every page stays one self-contained file."""
     ui = Path(__file__).parent / "ui"
     tpl = (ui / name).read_text(encoding="utf-8")
     css = (ui / "fx.css").read_text(encoding="utf-8").replace("</", "<\\/")
     js = (ui / "fx.js").read_text(encoding="utf-8").replace("</script", "<\\/script")
-    return tpl.replace("/*FX_CSS*/", css, 1).replace("/*FX_JS*/", js, 1)
+    tier_js = (ui / "tier.js").read_text(encoding="utf-8").replace("</script", "<\\/script")
+    return tpl.replace("/*FX_CSS*/", css, 1).replace("/*FX_JS*/", js, 1).replace("/*TIER_JS*/", tier_js, 1)
 
 
 def cmd_calibrate(args: argparse.Namespace) -> int:
@@ -275,6 +315,8 @@ def cmd_budget(args: argparse.Namespace) -> int:
         result["ledger"] = {"counts": lg["counts"], "entries": [
             {k: e[k] for k in ("id", "test", "verdict", "signal")} for e in lg["entries"]]}
     result["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    if (out_dir / "tier.json").exists():   # risk router (et tier): shown at the top of the budget page
+        result["tier"] = json.loads((out_dir / "tier.json").read_text(encoding="utf-8"))
     out = out_dir / "budget.json"
     out.write_text(json.dumps(result, indent=2), encoding="utf-8")
     tpl = ui_template("budget.html")
@@ -406,7 +448,7 @@ def cmd_index(args: argparse.Namespace) -> int:
     tot = {"files": 0, "human": 0, "naive": 0.0, "human_min": 0.0, "placebo": 0, "agent_tests": 0}
     for key in ["2234", "2297", "2283", "2129"]:
         d = ROOT / "out" / key
-        facts, budget, ledger, record = (load(d / n) for n in ("facts.json", "budget.json", "ledger.json", "record.json"))
+        facts, budget, ledger, record, tier = (load(d / n) for n in ("facts.json", "budget.json", "ledger.json", "record.json", "tier.json"))
         if not facts:
             continue
         m = meta.get(key, {})
@@ -430,6 +472,10 @@ def cmd_index(args: argparse.Namespace) -> int:
                     "ledger": ledger["counts"] if ledger else None,
                     "record": {"proven": sum(b["status"] == "proven" for b in record["behavior_changes"]),
                                "refusals": len(record["refusals"])} if record else None,
+                    "tier": {"tier": tier["tier"], "tier_name": tier["tier_name"], "without_cb": tier["tier_without_circuit_breaker"],
+                             "why": [(w.split(". Stays T3")[0] + (". Stays T3 until trust is earned back" if ". Stays T3" in w else ""))[:300]
+                                     for w in tier["why"]],
+                             "lanes": " / ".join(str(v["files"]) for v in tier["lanes"].values())} if tier else None,
                     "links": links, "notes": notes})
         tot["files"] += len(facts["files"])
         if budget:
@@ -662,6 +708,9 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("timemachine", help="replay the factory on the commit that caused the reported bug")
     p.add_argument("pr", choices=list(TIME_MACHINE))
     p.set_defaults(func=cmd_timemachine)
+    p = sub.add_parser("tier", help="explainable risk router: tier T0-T3 from named rules over executed facts -> out/<pr>/tier.json")
+    p.add_argument("pr", choices=[*PRS, "all"])
+    p.set_defaults(func=cmd_tier)
     p = sub.add_parser("budget", help="attention budget: which files a machine clears, which a human reads")
     p.add_argument("pr", choices=list(PRS))
     p.set_defaults(func=cmd_budget)

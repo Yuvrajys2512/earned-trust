@@ -48,6 +48,8 @@ button.theme{font:inherit;font-size:13px;background:none;border:1px solid var(--
 table{width:100%;border-collapse:collapse;font-size:14px} th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-size:12px;color:var(--muted);font-weight:600}
 @media (max-width:520px){ .nums{grid-template-columns:1fr 1fr} }
+.tierpill{display:inline-block;font:700 15px/1 var(--mono);padding:5px 9px;border-radius:7px;border:1px solid currentColor}
+.tp-T0{color:var(--ok)} .tp-T1{color:var(--accent)} .tp-T2{color:var(--warn)} .tp-T3{color:var(--bad)}
 </style>
 <style>/*FX_CSS*/</style>
 </head>
@@ -67,6 +69,7 @@ function card(p){
     <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><h3>${esc(p.requirement.id)} <span class="muted" style="font-weight:400">${esc(p.requirement.title)}</span></h3>${pill(p.status)}</div>
     <p class="truth">${esc(p.headline)}</p>
     <div class="nums">
+      ${p.tier?`<div class="num"><div class="n"><span class="tierpill tp-${esc(p.tier.tier)}">${esc(p.tier.tier)}</span></div><div class="l">risk tier: ${esc(p.tier.tier_name)}</div></div>`:''}
       <div class="num"><div class="n">${files}</div><div class="l">files a human reads (of total)</div></div>
       <div class="num"><div class="n">${minutes}</div><div class="l">human minutes (estimate) vs reading all</div></div>
       <div class="num"><div class="n">${r?r.proven:'—'}</div><div class="l">proven behavior changes${r?` · ${r.refusals} refusals`:''}</div></div>
@@ -81,6 +84,11 @@ document.getElementById('app').innerHTML = `<header><h1>Receipts, not reviews <s
   <p class="muted">Every number below comes from an executed check (git, a build, a test run on base and head, a byte compare). Minutes are estimates (changed lines ÷ 20/min) and say so. Generated ${esc(D.generated_at)}.</p>
   <h2>One line of truth per PR</h2>
   <div class="grid">${D.prs.map(card).join('')}</div>
+  <h2>Risk router: how much human review each PR gets</h2>
+  <div class="card"><p class="muted" style="margin-top:0">No score. The tier is the highest tier any named rule sets; every rule quotes an executed fact (<span class="mono">et tier &lt;pr&gt;</span> → <span class="mono">out/&lt;pr&gt;/tier.json</span>). T0 machine-cleared · T1 light check · T2 predict-then-reveal · T3 full read.</p>
+  <table><thead><tr><th>PR</th><th>Tier</th><th>Rules that set it</th><th>Files per lane (T0/T1/T2/T3)</th></tr></thead><tbody>
+  ${D.prs.filter(p=>p.tier).map(p=>`<tr><td>${esc(p.requirement.id)}</td><td><span class="tierpill tp-${esc(p.tier.tier)}">${esc(p.tier.tier)}</span></td><td>${p.tier.why.map(w=>`<div>${esc(w)}</div>`).join('')}${p.tier.without_cb?`<div class="muted">Circuit breaker: ${esc(p.tier.without_cb)} without the recorded escape</div>`:''}</td><td class="mono">${esc(p.tier.lanes)}</td></tr>`).join('')}
+  </tbody></table></div>
   <h2>What the method measured across them</h2>
   <div class="card"><table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody>
   ${D.method.map(m=>`<tr><td>${esc(m[0])}</td><td>${esc(m[1])}</td></tr>`).join('')}</tbody></table></div>`;
