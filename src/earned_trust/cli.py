@@ -112,7 +112,7 @@ def cmd_record(args: argparse.Namespace) -> int:
     drills = json.loads(dr_spec.read_text(encoding="utf-8")) if dr_spec.exists() else None
     drill_run = json.loads(dr_run.read_text(encoding="utf-8")) if dr_run.exists() else None
     record = rec.build_record(pr, facts, ledger, spec, out_dir / "verify" / "evidence", calibration, budget,
-                              drills, drill_run)
+                              drills, drill_run, added_methods=added_test_methods(args.repo, pr))
     cf_trx = out_dir / "counterfactual" / "head-nofilter.trx"
     if cf_trx.exists():   # PR head with one hunk reverted: which outcomes does that hunk alone cause? (inside the hash)
         import hashlib
@@ -427,10 +427,7 @@ def cmd_index(args: argparse.Namespace) -> int:
             tot["human"] += budget["totals"]["human"]; tot["naive"] += budget["totals"]["naive_minutes"]; tot["human_min"] += budget["totals"]["human_minutes"]
         if ledger:
             # only test methods the PR ADDS (pre-existing tests in the same class are regression checks, not the agent's)
-            import re as _re
-            pr = PRS[key]
-            added = gf.git(args.repo, "diff", "-U0", pr.base, gf.resolve_branch(args.repo, pr.branch), "--", "tests")
-            new_methods = set(_re.findall(r"^\+.*?\b(?:Task|void)\s+(\w+)\s*\(", added, _re.M))
+            new_methods = added_test_methods(args.repo, PRS[key])
             agent = [e for e in ledger["entries"] if not e["test"].startswith("Et") and e["test"].split(".")[-1] in new_methods]
             tot["agent_tests"] += len(agent); tot["placebo"] += sum(e["verdict"] == "placebo" for e in agent)
     method.append(["Files across the PRs with a budget", f"{tot['human']} need a human (~{tot['human_min']:.0f} of ~{tot['naive']:.0f} min)"])
@@ -561,6 +558,13 @@ def cmd_site(args: argparse.Namespace) -> int:
     for f in files:
         print(f"   {f}")
     return 0
+
+
+def added_test_methods(repo, pr) -> set[str]:
+    """Test method names the PR adds under tests/ (git diff base..head). Only these count as the agent's tests."""
+    import re
+    added = gf.git(repo, "diff", "-U0", pr.base, gf.resolve_branch(repo, pr.branch), "--", "tests")
+    return set(re.findall(r"^\+.*?\b(?:Task|void)\s+(\w+)\s*\(", added, re.M))
 
 
 TIME_MACHINE = {"2234": {"pr": 2106, "issue": 2234, "bad": "1a74a620"}}

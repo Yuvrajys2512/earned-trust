@@ -16,6 +16,12 @@ Evidence: <command / file / link>
 
 ---
 
+### L-23 — Our own page over-claimed: pre-existing tests counted as the agent's placebos (Sat 14 Nov 17:15 Helsinki, dry-run prep)
+What happened: writing the walkthrough, the #2283 review page said "**16 / 19** of the agent's tests are placebos" while the scoreboard said "6 of the **15** tests the agents added". Both were "executed", but they counted different things. `record.py` treated every non-`Et` test in the run as the agent's; the #2283 run filters on the whole `GenericsFormatterTests` class, so 16 **pre-existing** tests (regression checks, expected to pass on base) were labelled agent placebos. The agent actually added 3 tests on #2283, all catching (`git diff -U0 32258fdb origin/ju26-issue-2283 -- tests`). This was live on the public site.
+What we learned: "executed" is necessary, not sufficient: a true measurement under a wrong label is still a false claim. The *denominator* needs a receipt too (which tests did the PR add: a git fact), not just the outcome.
+What changed in the concept/build: `et record` now takes the added test methods from `git diff` (same helper as the scoreboard, `added_test_methods`) and reports pre-existing tests on a separate line as regression checks. #2283 now reads 0 / 3; #2234 unchanged (6 / 10); #2297 0 / 2; total 6 of 15 still holds. Records, attestations and AI-spec pages rebuilt; `et verify` VALID for all three.
+Evidence: `out/2283/record.json` `ledger_counts`, `src/earned_trust/record.py`, `src/earned_trust/cli.py` `added_test_methods`.
+
 ### L-22 — Live: the receipts are a URL anyone can check (Sat 14 Nov Helsinki, B8)
 What happened: `et site` collects only the publishable files (scoreboard, review pages, AI-spec pages, budgets, records, signed attestations, allowed_signers) into `out/site/`, and **refuses** if any file contains a key, the database URL, "avnadmin", "postgres://" or a private key. `modal deploy deploy/modal_app.py` serves it (stdlib http.server, no extra deps): https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run. Checked: 9 paths return 200; a statement + signature downloaded from the live site verifies with stock `ssh-keygen -Y verify`; the live scoreboard renders headlines and trust states.
 What we learned: static is enough. Prediction, reveal and signing run in the viewer's browser and nothing is uploaded back, so the public URL holds no reviewer data and needs no auth. The judge can verify our signature with tools they already have.

@@ -87,7 +87,8 @@ def drill_block(drills: dict | None, run: dict | None, calibration: dict | None)
 
 
 def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, calibration: dict | None = None,
-                 budget: dict | None = None, drills: dict | None = None, drill_run: dict | None = None) -> dict:
+                 budget: dict | None = None, drills: dict | None = None, drill_run: dict | None = None,
+                 added_methods: set[str] | None = None) -> dict:
     tests = _by_test(ledger)
     hearsay: list[str] = []
 
@@ -137,7 +138,14 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
     placebos = [_ev(e) for e in ledger["entries"] if e["verdict"] == "placebo"]
     # Reviewer-written receipts are named Et*Tests (receipts/<pr>/); everything else is the agent's.
     reviewer_tests = [e for e in ledger["entries"] if e["test"].startswith("Et")]
-    agent_tests = [e for e in ledger["entries"] if not e["test"].startswith("Et")]
+    # The agent's tests are only the test methods the PR ADDS (git diff); pre-existing tests in the same class
+    # are regression checks that are expected to pass on base, so they must not be counted as agent placebos.
+    others = [e for e in ledger["entries"] if not e["test"].startswith("Et")]
+    if added_methods is None:
+        agent_tests, existing_tests = others, []
+    else:
+        agent_tests = [e for e in others if e["test"].split(".")[-1] in added_methods]
+        existing_tests = [e for e in others if e["test"].split(".")[-1] not in added_methods]
 
     def counts(entries):
         out: dict[str, int] = {}
@@ -156,6 +164,8 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
         f"Agent's {len(agent_tests)} new tests run on base and on head: {fmt(counts(agent_tests))}",
         f"Reviewer's {len(reviewer_tests)} own tests of the source generator's output, run on base and head: "
         f"{fmt(counts(reviewer_tests))}",
+    ] + ([f"{len(existing_tests)} pre-existing tests in the same classes (regression checks, not the agent's), run on base and head: "
+          f"{fmt(counts(existing_tests))}"] if existing_tests else []) + [
         f"{len(facts['files'])} changed files classified: {fmt(facts['file_classes'])}",
     ]
     ab = None
@@ -190,7 +200,8 @@ def build_record(pr, facts: dict, ledger: dict, spec: dict, evidence_dir: Path, 
         "files": facts["files"],
         "file_classes": facts["file_classes"],
         "regression_check": facts.get("regression_check"),
-        "ledger_counts": {"agent_tests": counts(agent_tests), "reviewer_tests": counts(reviewer_tests)},
+        "ledger_counts": {"agent_tests": counts(agent_tests), "reviewer_tests": counts(reviewer_tests),
+                          "existing_tests": counts(existing_tests)},
         "placebo_tests": placebos,
         "behavior_changes": changes,
         "refusals": spec["refusals"],
