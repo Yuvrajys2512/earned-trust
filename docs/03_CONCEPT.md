@@ -43,7 +43,7 @@ Results on the four PRs (from `out/<pr>/tier.json`):
 | #2297 | **T2** | 3 proven behavior changes, 1 unexplained (CS0579 build break), 2 refusals | 228 / 2 / 7 / 0 |
 | #2129 | **T3** | `new-public-api`: adds `public class GeneratedMessagePackFormatterAttribute` (`src/MessagePack.Annotations/Attributes.cs`) and diagnostics MsgPack019–022 (`AnalyzerReleases.Unshipped.md`); also no base/head test run, and machine clearing 2/28 | 2 / 15 / 0 / 11 |
 
-**Circuit breaker.** An escape in a region raises that region to T3 automatically and keeps it there until trust is earned back (the trust-ledger rule: 3 later calibrated reviews that catch every planted bug, tests ≥ 80%). It is driven by executed escape events, not by a person noticing. Anthropic's Oct 2026 write-up of their own AI-review process lists "no circuit breakers yet" as an open problem ([claude.dev](https://claude.dev/blog/solving-code-review-at-anthropic/)).
+**Circuit breaker.** An escape in a region raises that region to T3 automatically and keeps it there until trust is earned back (the trust-ledger rule: 3 later calibrated reviews that catch every planted bug, tests ≥ 80%). It is driven by executed escape events, not by a person noticing. Anthropic's Oct 2026 write-up of their own AI-review process says “We don’t yet have circuit breakers that tighten approval when those numbers move” and calls it an open need ([claude.dev](https://claude.dev/blog/solving-code-review-at-anthropic/)).
 
 ## Principles (and how they balance the five forces)
 
@@ -68,7 +68,7 @@ Results on the four PRs (from `out/<pr>/tier.json`):
 - An AI "clean" is not evidence: Gemma reported 0 findings on #2234 (2 runs) while the receipts prove 3 behavior changes.
 - The human misses the disclosed drill → the signature carries a `MISSED DRILL` flag.
 - A region had an escape → circuit breaker, T3 until trust is earned back (`TypeCollector.cs`).
-- Our own failures are logged: `docs/FAILURE_MODES.md` (F-01…F-45).
+- Our own failures are logged: `docs/FAILURE_MODES.md` (F-01…F-46).
 
 **Who owns the decision?** The named human who signs the record. The AI proves, asks and refuses; it never approves, and a bot can't fill the human slot. The record says what the signer predicted before the reveal, what was refused to them, and their drill result, so the accountability is specific. In a team, the person who prompted the agent is accountable for the PR too.
 
@@ -125,10 +125,10 @@ Outcomes, not activity. Measured now on 4 PRs, all from executed runs:
 ## Where this sits (prior art)
 | What exists | What it does | Where it stops | What we add |
 | --- | --- | --- | --- |
-| Vendor AI reviewers (CodeRabbit, Copilot, Bugbot…; study: [arXiv 2607.03316](https://arxiv.org/abs/2607.03316)) | line comments, summaries | answers "what's wrong?", not "what can a human sign?"; no measured confidence | measured screeners, refusals, a signed record |
+| Vendor AI reviewers (CodeRabbit, Copilot, Bugbot…; CodeRabbit field study, 56.3% of comments rejected: [arXiv 2607.03316](https://arxiv.org/abs/2607.03316)) | line comments, summaries | answers "what's wrong?", not "what can a human sign?"; no measured confidence | measured screeners, refusals, a signed record |
 | Meta Diff Risk Score ([arXiv 2410.06351](https://arxiv.org/abs/2410.06351)) | an LLM risk score gates risky diffs | a score, explained after the fact | a tier made only of named rules over executed facts |
 | Behavior-diff tools: Meta JiTTests, ADAPT ([arXiv 2611.16114](https://arxiv.org/abs/2611.16114)), DiffTestGen, BeTell | prove behavior changed between base and head | stop at "it changed": no requirement link, refusal, human prediction or signature | our *Prove* step builds on them, then Predict → Measure → Refuse → Sign |
-| Anthropic's AI code-review process ([claude.dev, Oct 2026](https://claude.dev/blog/solving-code-review-at-anthropic/)) | risk tiers decide how many humans review | "no circuit breakers yet"; verifier agents are LLMs checking LLMs | a circuit breaker driven by executed escapes; LLM output stays hearsay |
+| Anthropic's AI code-review process ([claude.dev, Oct 2026](https://claude.dev/blog/solving-code-review-at-anthropic/)) | risk tiers decide how many humans review | no circuit breakers yet (their words: “We don’t yet have circuit breakers that tighten approval when those numbers move”); verifier agents are LLMs checking LLMs | a circuit breaker driven by executed escapes; LLM output stays hearsay |
 | Trust-Calibrated Code Review ([arXiv 2606.01969](https://arxiv.org/abs/2606.01969)) | practitioners: review is a trust-calibration problem | a design study | calibration built in: planted bugs for tests and AI, a drill for the human, per-region trust |
 
 *Vendors make the AI find more. Behavior-diff research proves what changed. Anthropic routes by risk. Nobody closes the loop: measured screeners, a human who commits before seeing, refusals, a signed record, and trust that tightens itself after an escape.*

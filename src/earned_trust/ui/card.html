@@ -126,7 +126,7 @@ footer{margin-top:14px;font-size:12px;color:var(--muted)}
       <div class="pr"><b>#2283</b><span class="tb t3">T3</span><span>same region, same escape (T2 without it)</span></div>
       <div class="pr"><b>#2297</b><span class="tb t2">T2</span><span>228 of 237 files T0; 3 proven changes, a CS0579 build break, 2 refusals</span></div>
     </div>
-    <p class="muted" style="margin:6px 0 0;font-size:12px">The circuit breaker tightens itself after an executed escape and loosens only when trust is earned back. Anthropic's Oct 2026 review write-up lists "no circuit breakers yet" as open.</p>
+    <p class="muted" style="margin:6px 0 0;font-size:12px">The circuit breaker tightens itself after an executed escape and loosens only when trust is earned back. Anthropic's Oct 2026 review write-up says &ldquo;We don’t yet have circuit breakers that tighten approval when those numbers move&rdquo;.</p>
   </div>
 </div>
 
@@ -170,7 +170,7 @@ footer{margin-top:14px;font-size:12px;color:var(--muted)}
 <div class="row2">
   <div class="card qa">
     <h2>The judges' three questions</h2>
-    <p><b class="q">What would make you not trust your own output?</b>Measured stop rules: tests under 80% of planted bugs (#2234: 6/10) can't clear a region; placebo tests don't count (6 of 10); history that can't support the requirement → refusal; an AI "clean" isn't evidence (Gemma: 0 findings, 3 proven changes); a missed drill flags the signature; an escape trips the circuit breaker. Our own failures: F-01…F-45.</p>
+    <p><b class="q">What would make you not trust your own output?</b>Measured stop rules: tests under 80% of planted bugs (#2234: 6/10) can't clear a region; placebo tests don't count (6 of 10); history that can't support the requirement → refusal; an AI "clean" isn't evidence (Gemma: 0 findings, 3 proven changes); a missed drill flags the signature; an escape trips the circuit breaker. Our own failures: F-01…F-46.</p>
     <p><b class="q">Who owns the decision?</b>The named human who signs. The AI proves, asks and refuses; it never approves, and a bot can't fill the human slot. The record shows what they predicted, what was refused to them, and their drill result.</p>
     <p><b class="q">How would this scale?</b>Most change lands in T0/T1 (#2297: 237 → 9 files); only named rules send a PR to T3. Base + head test runs took 21.5–37.0 s per PR (TRX; build time not measured). Regions with a track record need less, regions with an escape need more. Limit: a sandbox per PR.</p>
   </div>
@@ -200,10 +200,10 @@ footer{margin-top:14px;font-size:12px;color:var(--muted)}
 <div class="card full">
   <h2>Where this sits</h2>
   <table class="t"><thead><tr><th>What exists</th><th>Where it stops</th><th>What we add</th></tr></thead><tbody>
-    <tr><td>Vendor AI reviewers (CodeRabbit, Copilot, Bugbot) <a href="https://arxiv.org/abs/2607.03316">[1]</a></td><td>"What's wrong?", not "what can a human sign?"</td><td>measured screeners, refusals, signed record</td></tr>
+    <tr><td>Vendor AI reviewers (CodeRabbit, Copilot, Bugbot; CodeRabbit study <a href="https://arxiv.org/abs/2607.03316">[1]</a>)</td><td>"What's wrong?", not "what can a human sign?"</td><td>measured screeners, refusals, signed record</td></tr>
     <tr><td>Meta Diff Risk Score <a href="https://arxiv.org/abs/2410.06351">[2]</a></td><td>a score, explained after the fact</td><td>tiers from named rules over executed facts</td></tr>
     <tr><td>Behavior diff: JiTTests, ADAPT <a href="https://arxiv.org/abs/2611.16114">[3]</a>, BeTell</td><td>stop at "it changed"</td><td>requirement link, prediction, refusal, signature</td></tr>
-    <tr><td>Anthropic's review process <a href="https://claude.dev/blog/solving-code-review-at-anthropic/">[4]</a></td><td>"no circuit breakers yet"; LLMs verify LLMs</td><td>circuit breaker from executed escapes</td></tr>
+    <tr><td>Anthropic's review process <a href="https://claude.dev/blog/solving-code-review-at-anthropic/">[4]</a></td><td>no circuit breakers yet; LLMs verify LLMs</td><td>circuit breaker from executed escapes</td></tr>
     <tr><td>Trust-Calibrated Code Review <a href="https://arxiv.org/abs/2606.01969">[5]</a></td><td>a design study</td><td>calibration built in, the human too</td></tr>
   </tbody></table>
   <p class="line">Vendors make the AI find more. Behavior-diff research proves what changed. Anthropic routes by risk. Nobody closes the loop.</p>

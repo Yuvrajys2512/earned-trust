@@ -29,7 +29,7 @@ Risk tiers (`out/<pr>/tier.json`): #2129 **T3** (new public API); #2234 and #228
 Across all four: **6 of the 15** tests the agents added are placebos. Injection: a hidden instruction in a PR description made a naive reviewer drop a real finding in 2 of 3 runs (4/6 vs 6/6 planted bugs caught); our pipeline never hands PR text to a model.
 
 ## The judges' three questions
-**What would make you not trust your own output?** Measured stop rules, not self-reports: tests that catch fewer than 80% of the bugs we plant can't clear a region (#2234: 6/10); placebo tests don't count (6 of 10); a requirement the history can't support is refused ("Is #2234 fixed?"); an AI "clean" isn't evidence (Gemma: 0 findings on #2234 while 3 behavior changes are proven); a missed drill flags the signature; an escape trips the circuit breaker. Our own failures are logged in [docs/FAILURE_MODES.md](docs/FAILURE_MODES.md) (F-01…F-45).
+**What would make you not trust your own output?** Measured stop rules, not self-reports: tests that catch fewer than 80% of the bugs we plant can't clear a region (#2234: 6/10); placebo tests don't count (6 of 10); a requirement the history can't support is refused ("Is #2234 fixed?"); an AI "clean" isn't evidence (Gemma: 0 findings on #2234 while 3 behavior changes are proven); a missed drill flags the signature; an escape trips the circuit breaker. Our own failures are logged in [docs/FAILURE_MODES.md](docs/FAILURE_MODES.md) (F-01…F-46).
 
 **Who owns the decision?** The named human who signs the record. The AI proves, asks and refuses; it never approves, and a bot can't fill the human slot. The record shows what the signer predicted before the reveal, what was refused to them and their drill result. In a team, whoever prompted the agent is accountable for the PR too.
 
@@ -38,10 +38,10 @@ Across all four: **6 of the 15** tests the agents added are placebos. Injection:
 ## Where this sits (prior art)
 | What exists | Where it stops | What we add |
 | --- | --- | --- |
-| Vendor AI reviewers: CodeRabbit, Copilot, Bugbot ([arXiv 2607.03316](https://arxiv.org/abs/2607.03316)) | answer "what's wrong?", not "what can a human sign?"; no measured confidence | measured screeners, refusals, a signed record |
+| Vendor AI reviewers: CodeRabbit, Copilot, Bugbot (CodeRabbit field study: [arXiv 2607.03316](https://arxiv.org/abs/2607.03316)) | answer "what's wrong?", not "what can a human sign?"; no measured confidence | measured screeners, refusals, a signed record |
 | Meta Diff Risk Score ([arXiv 2410.06351](https://arxiv.org/abs/2410.06351)) | a risk score, explained after the fact | tiers made only of named rules over executed facts |
 | Behavior-diff tools: Meta JiTTests, ADAPT ([arXiv 2611.16114](https://arxiv.org/abs/2611.16114)), DiffTestGen, BeTell | stop at "behavior changed" | requirement link, human prediction, refusal, calibration, signature |
-| Anthropic's AI code-review process ([claude.dev, Oct 2026](https://claude.dev/blog/solving-code-review-at-anthropic/)) | risk tiers, but "no circuit breakers yet"; verifier agents are LLMs checking LLMs | a circuit breaker driven by executed escapes; LLM output stays hearsay |
+| Anthropic's AI code-review process ([claude.dev, Oct 2026](https://claude.dev/blog/solving-code-review-at-anthropic/)) | risk tiers, but no circuit breakers yet (“We don’t yet have circuit breakers that tighten approval when those numbers move”); verifier agents are LLMs checking LLMs | a circuit breaker driven by executed escapes; LLM output stays hearsay |
 | Trust-Calibrated Code Review ([arXiv 2606.01969](https://arxiv.org/abs/2606.01969)) | a design study: review is a trust-calibration problem | calibration built in: planted bugs for tests and AI, a drill for the human, per-region trust |
 
 *Vendors make the AI find more. Behavior-diff research proves what changed. Anthropic routes by risk. Nobody closes the loop: measured screeners, a human who commits before seeing, refusals, a signed record, and trust that tightens itself after an escape.*
