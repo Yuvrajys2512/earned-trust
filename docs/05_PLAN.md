@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** Sun 15 Nov ~08:00 Helsinki: new interactive page `fool.html` ("Try to fool the reviewer": JS port of the quarantine, identical to `quarantine.py` on both samples, L-30) + video beat 8; risk router self-tested (`et router-check`: fail closed 14/14; controls 5/5 risky, 1/5 false alarm; L-29, F-47). Attestations VALID ×3. Next: deploy + push, record the video from `docs/10_WALKTHROUGH.md`, fill the video link in `docs/11_SUBMISSION.md`, submit by 09:30.
+**Now:** Sun 15 Nov ~08:10 Helsinki: final. Live site redeployed (`fool.html` now live), all pages 200, attestations VALID ×3, repo pushed. Submission text final in `docs/11_SUBMISSION.md`; video link = a Google Drive folder, video uploaded there after submitting (before 10:00).
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 

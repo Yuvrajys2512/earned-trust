@@ -66,4 +66,4 @@ Commits: no Claude co-author trailer (user preference).
 - [x] Walkthrough v2: opens on "checking a story"; router + circuit-breaker beat; live phrases checked
 - [ ] Demo video ≤3 min
 - [x] Clean DECISIONS / LESSONS / FAILURE_MODES, README (LESSONS index added; timestamps checked)
-- [ ] Submit by 09:30
+- [x] Submit by 09:30 (submission text final; video link = Drive folder, video added after)

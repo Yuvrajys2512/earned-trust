@@ -1,12 +1,12 @@
 # 11 — Submission text (draft, Sat 14 Nov ~18:50 Helsinki; numbers refreshed Sun 15 Nov ~00:30)
 
-Paste-ready. Every number is from `HANDOFF.md` §3 or `out/<pr>/tier.json` (executed sources). Fill the remaining `TODO` link (video) before submitting. Submit by **Sun 09:30 Helsinki**.
+Paste-ready. Every number is from `HANDOFF.md` §3 or `out/<pr>/tier.json` (executed sources). The video lives in a Google Drive folder (link `DRIVE_FOLDER_LINK`, video added after submission). Submit by **Sun 09:30 Helsinki**.
 
 - Live demo: https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run
 - Concept card: https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run/card.html
 - Try to fool it (interactive): https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run/fool.html
 - Repo: https://github.com/Yuvrajys2512/earned-trust
-- Video (≤ 3 min): TODO
+- Video (≤ 3 min, in a Google Drive folder): DRIVE_FOLDER_LINK
 - Team: Yuvraj Srivastava (solo)
 
 ---
