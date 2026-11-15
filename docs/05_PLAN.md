@@ -1,6 +1,6 @@
 # 05 — Plan
 
-**Now:** Sun 15 Nov ~06:55 Helsinki: risk router is now self-tested (`et router-check`: fails closed 14/14; synthetic controls 5/5 risky caught, 1/5 false alarm), new rules `whitespace-only` (T0) and `head-does-not-build` (T3); caught our own false "#2129 doesn't build" (SDK, L-29, F-47). Tiers unchanged; attestations VALID ×3. Next: record the video from `docs/10_WALKTHROUGH.md`, fill the video link in `docs/11_SUBMISSION.md`, submit by 09:30. (Update this line after every round.)
+**Now:** Sun 15 Nov ~08:00 Helsinki: new interactive page `fool.html` ("Try to fool the reviewer": JS port of the quarantine, identical to `quarantine.py` on both samples, L-30) + video beat 8; risk router self-tested (`et router-check`: fail closed 14/14; controls 5/5 risky, 1/5 false alarm; L-29, F-47). Attestations VALID ×3. Next: deploy + push, record the video from `docs/10_WALKTHROUGH.md`, fill the video link in `docs/11_SUBMISSION.md`, submit by 09:30.
 
 Deadline: **Sun 15 Nov 10:00 Helsinki** final submission. Review 14:00. Times below are Helsinki time.
 

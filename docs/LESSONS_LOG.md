@@ -35,6 +35,7 @@ Deliverable. Log every surprise, dead end and insight as it happens — short, d
 - L-27 Rebuilding one input after signing broke the attestation, and `et verify` caught it
 - L-28 The risk router's first verdict: our own main demo PR needs a full read (circuit breaker)
 - L-29 Our build check reported #2129 as broken; it was our SDK, not the PR
+- L-30 Porting the detector to the browser: check the port against the original, not against our expectations
 
 ---
 
@@ -48,6 +49,12 @@ Evidence: <command / file / link>
 ```
 
 ---
+
+### L-30 — Porting the detector to the browser: check the port against the original (Sun 15 Nov ~07:55 Helsinki)
+What happened: the "Try to fool it" page runs a JavaScript copy of `quarantine.py`. A port can drift (regex flags, ``, NFKC, code points beyond U+FFFF for tag characters need the `u` flag and `[...s]` iteration). We ran both on the same files before publishing.
+What we learned: a demo that runs code is a claim about that code. If the browser verdict differed from the pipeline's, the page would demonstrate a detector we don't use.
+What changed: nothing needed fixing: identical on `samples/pr_descriptions/injected_2234.md` (injection-suspected; 1077 chars, 616 visible, 191 invisible; 7 hidden instructions; html-comment + unicode-tag-chars + zero-width-chars) and `benign_2234.md` (clean).
+Evidence: `uv run python -c "from earned_trust.quarantine import analyze; ..."` vs headless Edge `--dump-dom out/fool.html`.
 
 ### L-29 — Our build check reported #2129 as broken; it was our SDK, not the PR (Sun 15 Nov ~06:45 Helsinki)
 What happened: the new `head-does-not-build` rule ran `scripts/build_2129.sh` and found the PR's own `MessagePack.SourceGenerator.ExecutionTests` failing with **CS0535 ×6** in `GeneratedFormatterForExternalTypes.cs` (a file the PR adds). That read as "the agent shipped tests that don't compile". The same log holds **CS9057**: under the pinned SDK 8.0.402 the generator doesn't load, so the partial formatters it should fill are empty. Same root cause as L-04. With the SDK 9 override our verify scripts already use, both projects build (exit 0, no errors).

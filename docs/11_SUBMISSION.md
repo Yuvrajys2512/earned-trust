@@ -4,6 +4,7 @@ Paste-ready. Every number is from `HANDOFF.md` §3 or `out/<pr>/tier.json` (exec
 
 - Live demo: https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run
 - Concept card: https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run/card.html
+- Try to fool it (interactive): https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run/fool.html
 - Repo: https://github.com/Yuvrajys2512/earned-trust
 - Video (≤ 3 min): TODO
 - Team: Yuvraj Srivastava (solo)

@@ -80,7 +80,7 @@ function card(p){
   </div>`;
 }
 document.getElementById('app').innerHTML = `<header><h1>Receipts, not reviews <small>4 agent-written PRs, one method</small></h1>
-  <span><a href="card.html">concept card</a> &nbsp; <button class="theme" onclick="toggleTheme()">theme</button></span></header>
+  <span><a href="fool.html"><b>try to fool it</b></a> &nbsp; <a href="card.html">concept card</a> &nbsp; <button class="theme" onclick="toggleTheme()">theme</button></span></header>
   <p class="muted">Every number below comes from an executed check (git, a build, a test run on base and head, a byte compare). Minutes are estimates (changed lines ÷ 20/min) and say so. Generated ${esc(D.generated_at)}.</p>
   <h2>One line of truth per PR</h2>
   <div class="grid">${D.prs.map(card).join('')}</div>

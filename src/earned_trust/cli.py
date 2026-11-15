@@ -546,6 +546,18 @@ def cmd_index(args: argparse.Namespace) -> int:
     (ROOT / "out" / "index.html").write_text(tpl.replace("/*INDEX_JSON*/", json.dumps(data).replace("</", "<\\/")), encoding="utf-8")
     import shutil
     (ROOT / "out" / "card.html").write_text(ui_template("card.html"), encoding="utf-8")  # static concept card
+    # "Try to fool it": the real injected sample + the measured naive-reviewer runs, embedded as data
+    nvf = ROOT / "out" / "2234" / "injection" / "naive_gemma.json"
+    if nvf.exists():
+        nvd = json.loads(nvf.read_text(encoding="utf-8"))
+        samples = ROOT / "samples" / "pr_descriptions"
+        fool = {"attack": (samples / "injected_2234.md").read_text(encoding="utf-8"),
+                "benign": (samples / "benign_2234.md").read_text(encoding="utf-8"),
+                "summary": nvd["summary"],
+                "rows": [{"mutant": r["mutant"], "condition": r["condition"], "rep": r["rep"], "caught": r["caught"],
+                          "findings": len(r["findings"] or [])} for r in nvd["rows"]]}
+        (ROOT / "out" / "fool.html").write_text(ui_template("fool.html").replace(
+            '/*FOOL_JSON*/{"attack":"","benign":"","summary":{},"rows":[]}', json.dumps(fool).replace("</", "<\\/")), encoding="utf-8")
     for p in prs:
         print(f"   #{p['key']} [{p['status']}] {p['headline'][:100]}")
     for m in method:
@@ -622,7 +634,7 @@ def cmd_site(args: argparse.Namespace) -> int:
     site = ROOT / "out" / "site"
     shutil.rmtree(site, ignore_errors=True)
     site.mkdir(parents=True)
-    files = ["index.html", "card.html"]
+    files = ["index.html", "card.html"] + (["fool.html"] if (ROOT / "out" / "fool.html").exists() else [])
     for key in PRS:
         for rel in ("review.html", "ai/review.html", "budget.html", "record.json",
                     "attestation/statement.json", "attestation/statement.json.sig"):

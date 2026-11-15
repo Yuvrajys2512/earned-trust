@@ -12,6 +12,7 @@ Before recording: open each URL below in its own tab, in this order. Use a fresh
 | 3 | `B/2129/budget.html` (risk-router card at the top) |
 | 4 | `B/` (scoreboard, scrolled to **"Risk router: how much human review each PR gets"**) |
 | 5 | `B/card.html` |
+| 6 | `B/fool.html` ("Try to fool the reviewer"), loaded with the real attack (it loads by default) |
 | (optional) | https://github.com/MessagePack-CSharp/MessagePack-CSharp/pull/2106 (used in the 5-min variant) |
 
 
@@ -54,12 +55,16 @@ Opens on the brief's own framing: *"You are checking a story, and questioning th
 *Show:* the red **T3** card: "new-public-api: adds public class GeneratedMessagePackFormatterAttribute … diagnostics MsgPack019, MsgPack020, MsgPack021, MsgPack022". Then the scoreboard table: #2234 **T3**, "Circuit breaker: T2 without the recorded escape".
 *Say:* "How much reading does a PR deserve? No risk score. Named rules, each citing a git fact. This feature adds new public API, a one-way door, so it's T3: full read. And 2234 is T3 too: its file had that 2024 escape, so the circuit breaker raised it until trust is earned back."
 
-**7. Trust, measured both ways (2:25–2:48) · tab 1, "How far to trust the AI reviewer"**
+**7. Trust, measured both ways (2:25–2:40) · tab 1, "How far to trust the AI reviewer"**
 *Show:* **6/10** tests · **9/10** Gemma · **10/10** together; the drill note.
 *Say:* "We plant known bugs to measure every screener on this PR: tests 6 of 10, the AI 9 of 10, together all 10. One of your questions is a drill, like the test images airport screeners see. Your signature records whether you caught it."
 
-**8. Close (2:48–3:00) · tab 5, `B/card.html`**
-*Say:* "You sign a replayable attestation anyone can verify with ssh-keygen: evidence toward DORA and SLSA two-party review. We don't ask you to trust the AI. We make it hand over receipts."
+**8. Try to fool it (2:40–2:52) · tab 6, `B/fool.html`**
+*Show:* left pane = what the human sees (clean), right pane = what a model reads (red: hidden comment, invisible Unicode). Click **Hide as invisible Unicode**: the text box doesn't change, the red verdict does. Then the stat row **6/6 → 4/6**.
+*Say:* "Agents can hide instructions in a PR description. This one, invisible, made an AI reviewer return 'no findings' in 2 of 3 runs. You can't fool our pipeline this way: it never reads your text. Try it on your phone."
+
+**9. Close (2:52–3:00) · tab 5, `B/card.html`**
+*Say:* "You sign a replayable attestation anyone can verify with ssh-keygen. We don't ask you to trust the AI. We make it hand over receipts."
 
 ---
 
@@ -79,6 +84,8 @@ Order: **receipts → prediction mismatch → drill → trust ledger → attesta
    ssh-keygen -Y verify -f allowed_signers -I reviewer@earned-trust.example -n earned-trust-review -s statement.json.sig < statement.json
    ```
    Expected: `Good "earned-trust-review" signature for reviewer@earned-trust.example`. Say: "demo key, not a personal identity; in production it's the reviewer's own key."
+
+**Audience moment (30 s, optional) · `B/fool.html`** — put the URL on screen and invite judges to try to sneak an instruction past it on their phones while you talk. Then: "Whatever you hide, the verdict doesn't change: no model in our pipeline reads that text. The detector is for the human."
 
 Close with the card (`B/card.html`): Prove → Predict → Measure → Refuse → Sign, P1–P10, trade-offs, limits.
 
