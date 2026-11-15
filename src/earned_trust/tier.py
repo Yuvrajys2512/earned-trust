@@ -46,9 +46,20 @@ def public_api(repo: str, base: str, head: str) -> dict:
             "command": f"git diff {base} {head} -- {' '.join(API_DIRS)} '*AnalyzerReleases.*.md' '*PublicAPI.*.txt'"}
 
 
+def whitespace_only(repo: str, base: str, head: str, path: str) -> bool:
+    """Executed fact: `git diff -w` shows no change for this file AND no changed line holds a quote character
+    (whitespace inside a string literal is behavior; we don't parse C#, so any quote on a changed line disqualifies)."""
+    if gf.git(repo, "diff", "-w", base, head, "--", path).strip():
+        return False
+    raw = gf.git(repo, "diff", "-U0", base, head, "--", path)
+    changed = [l for l in raw.splitlines() if l[:1] in "+-" and not l.startswith(("+++", "---"))]
+    return bool(changed) and not any('"' in l or "'" in l for l in changed)
+
+
 def build(key: str, repo: str, base: str, head: str, facts: dict, *, record: dict | None = None,
           budget: dict | None = None, ledger: dict | None = None, calibration: dict | None = None,
-          trust: dict | None = None) -> dict:
+          trust: dict | None = None, build: dict | None = None) -> dict:
+    """Fail closed: a missing input never lowers the tier (see selftest()). `build` = head build-check results."""
     files = facts["files"]
     rules: list[dict] = []
     lanes: dict[str, dict] = {}
@@ -78,6 +89,14 @@ def build(key: str, repo: str, base: str, head: str, facts: dict, *, record: dic
             lane(p, "T0", "byte-identical-regen" if p in gen else "template-output-consistent")
     else:
         rule("byte-identical-regen", "T0", False, "not measured (no attention budget run for this PR)", f"out/{key}/budget.json absent")
+
+    ws = [f["path"] for f in files if f["path"] not in cleared and f["status"] != "D"
+          and whitespace_only(repo, base, head, f["path"])]
+    rule("whitespace-only", "T0", ws, f"{len(ws)} files change only whitespace (`git diff -w` is empty and no changed line "
+         "holds a quote, so no string literal changed)", f"git diff -w {base} {head}", ws)
+    for p in ws:
+        lane(p, "T0", "whitespace-only")
+    cleared = {**cleared, **{p: {"cls": "whitespace"} for p in ws}}
 
     # --- T1: non-behavior files a human still skims ----------------------------------------------------
     light = [f["path"] for f in files if f["path"] not in cleared and f["cls"] not in BEHAVIOR_CLS]
@@ -117,11 +136,13 @@ def build(key: str, repo: str, base: str, head: str, facts: dict, *, record: dic
         rule("screener-below-bar", "T2", t["caught"] / t["measured"] < TESTS_MIN,
              f"tests caught {t['caught']}/{t['measured']} planted bugs (bar {int(TESTS_MIN * 100)}%); all screeners together "
              f"{union}/{len(rows)}: the tests alone can't clear this region", f"out/{key}/calibration.json")
-    else:
-        rule("screener-below-bar", "T2", False, "not measured (no planted-bug run): an AI reviewer's silence carries no weight here",
-             f"out/{key}/calibration.json absent")
+    else:   # fail closed: an unmeasured screener can't clear anything
+        rule("screener-unmeasured", "T2", behavior, f"no planted-bug run: the screeners' catch rate on this PR is not measured, "
+             f"so an AI reviewer's silence carries no weight on {len(behavior)} behavior-code files", f"out/{key}/calibration.json absent",
+             behavior)
+    open_paths = {f["path"] for f in files if f["path"] not in cleared}   # machine-cleared files need no track record
     unknown = [p for p, r in ((trust or {}).get("regions") or {}).items()
-               if r["state"] == "unknown" and any(f["path"] == p for f in files)]
+               if r["state"] == "unknown" and p in open_paths]
     rule("no-track-record", "T2", unknown, f"{len(unknown)} changed source regions have no track record in the trust ledger "
          "(unknown = low trust: a human question is required)", "out/trust.json", unknown)
 
@@ -136,7 +157,7 @@ def build(key: str, repo: str, base: str, head: str, facts: dict, *, record: dic
         for p in api["files"]:
             lane(p, "T3", "new-public-api")
     withdrawn = {p: r for p, r in ((trust or {}).get("regions") or {}).items()
-                 if r["state"] == "withdrawn" and any(f["path"] == p for f in files)}
+                 if r["state"] == "withdrawn" and p in open_paths}
     if rule("circuit-breaker", "T3", withdrawn,
             "; ".join(f"{p.split('/')[-1]}: trust withdrawn after {r['escapes'][0]['pr']} escaped "
                       f"({r['escapes'][0]['detail']})" for p, r in withdrawn.items())
@@ -145,6 +166,20 @@ def build(key: str, repo: str, base: str, head: str, facts: dict, *, record: dic
             withdrawn):
         for p in withdrawn:
             lane(p, "T3", "circuit-breaker")
+    if trust is None and rule("trust-ledger-unavailable", "T3", behavior,
+                              f"no trust-ledger snapshot: escapes can't be checked, so the circuit breaker is treated as tripped "
+                              f"for {len(behavior)} behavior-code files (fail closed)", "out/trust.json absent", behavior):
+        for p in behavior:
+            lane(p, "T3", "trust-ledger-unavailable")
+    broken = [b for b in (build or {}).get("projects", []) if b["exit"] != 0]
+    if build is not None and rule("head-does-not-build", "T3", broken,
+                                  "; ".join(f"{b['project']} fails to build on the PR head ({b['errors']}), e.g. {b['first_error']}"
+                                            for b in broken) or f"{len(build['projects'])} test projects build on the head",
+                                  f"scripts/build_{key}.sh -> out/{key}/build/summary.tsv",
+                                  sorted({b['file'] for b in broken if b.get('file')})):
+        for b in broken:
+            if b.get("file"):
+                lane(b["file"], "T3", "head-does-not-build")
     if rule("no-execution-receipts", "T3", not ledger and behavior,
             f"{len(behavior)} behavior-code files and no base/head test run: behavior is not measured, so nothing can be "
             "shown as proven" if not ledger else "base/head test run exists", f"out/{key}/ledger.json absent" if not ledger

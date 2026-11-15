@@ -37,13 +37,13 @@ The AI proves what behavior changed. The human predicts what should happen befor
 - Across all PRs: **6 of the 15** tests the agents added are placebos.
 - **Prompt injection:** with a description hiding instructions, a naive reviewer that read it caught **4/6** planted bugs vs **6/6** without it, and dropped a real finding in 2 of 3 runs. Our pipeline flags the payloads and never passes PR text to a model.
 
-**The judges' three questions.** *What would make you not trust your own output?* Measured stop rules: tests under 80% of planted bugs can't clear a region; placebo tests don't count; a requirement the history can't support is refused; an AI "clean" isn't evidence; a missed drill flags the signature; an escape trips the circuit breaker (our own failures: F-01…F-46). *Who owns the decision?* The named human who signs; the AI proves, asks and refuses, never approves. *How would this scale?* Most change lands in T0/T1 (#2297: 228/237 files machine-cleared); base + head test runs took 21.5–37.0 s per PR (TRX timestamps; build time not measured); regions with a track record need less, regions with an escape need more.
+**The judges' three questions.** *What would make you not trust your own output?* Measured stop rules: tests under 80% of planted bugs can't clear a region; placebo tests don't count; a requirement the history can't support is refused; an AI "clean" isn't evidence; a missed drill flags the signature; an escape trips the circuit breaker (our own failures: F-01…F-47). *Who owns the decision?* The named human who signs; the AI proves, asks and refuses, never approves. *How would this scale?* Most change lands in T0/T1 (#2297: 228/237 files machine-cleared); base + head test runs took 21.5–37.0 s per PR (TRX timestamps; build time not measured); regions with a track record need less, regions with an escape need more.
 
 **Why a judge should care.** The signed record is evidence toward DORA Art. 9 change management and SLSA two-party review. It supports those audits; it doesn't make anyone compliant. It records what the signer knew, what they predicted, and what was not checked.
 
 **Honest limits.** It's weak on architecture fit and maintainability. It needs a buildable, testable repo. Planted bugs only measure known bug types. Predict-before-reveal adds friction on purpose. Unproven behavior is shown as *unknown*, never *safe*. The demo signing key is not a personal identity.
 
-**Deliverables.** Concept card (`/card.html`, `docs/03_CONCEPT.md`), live walkthrough (`docs/10_WALKTHROUGH.md`), lessons log (`docs/LESSONS_LOG.md`, L-01…L-28), failure modes (`docs/FAILURE_MODES.md`, F-01…F-46), decision log (`docs/DECISIONS.md`), video.
+**Deliverables.** Concept card (`/card.html`, `docs/03_CONCEPT.md`), live walkthrough (`docs/10_WALKTHROUGH.md`), lessons log (`docs/LESSONS_LOG.md`, L-01…L-28), failure modes (`docs/FAILURE_MODES.md`, F-01…F-47), decision log (`docs/DECISIONS.md`), video.
 
 **Verify it yourself.**
 ```bash

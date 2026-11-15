@@ -68,7 +68,7 @@ Results on the four PRs (from `out/<pr>/tier.json`):
 - An AI "clean" is not evidence: Gemma reported 0 findings on #2234 (2 runs) while the receipts prove 3 behavior changes.
 - The human misses the disclosed drill → the signature carries a `MISSED DRILL` flag.
 - A region had an escape → circuit breaker, T3 until trust is earned back (`TypeCollector.cs`).
-- Our own failures are logged: `docs/FAILURE_MODES.md` (F-01…F-46).
+- Our own failures are logged: `docs/FAILURE_MODES.md` (F-01…F-47).
 
 **Who owns the decision?** The named human who signs the record. The AI proves, asks and refuses; it never approves, and a bot can't fill the human slot. The record says what the signer predicted before the reveal, what was refused to them, and their drill result, so the accountability is specific. In a team, the person who prompted the agent is accountable for the PR too.
 

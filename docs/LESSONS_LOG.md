@@ -34,6 +34,7 @@ Deliverable. Log every surprise, dead end and insight as it happens — short, d
 - L-26 The live site served the previous deploy to returning browsers (1970 Last-Modified → 304)
 - L-27 Rebuilding one input after signing broke the attestation, and `et verify` caught it
 - L-28 The risk router's first verdict: our own main demo PR needs a full read (circuit breaker)
+- L-29 Our build check reported #2129 as broken; it was our SDK, not the PR
 
 ---
 
@@ -47,6 +48,12 @@ Evidence: <command / file / link>
 ```
 
 ---
+
+### L-29 — Our build check reported #2129 as broken; it was our SDK, not the PR (Sun 15 Nov ~06:45 Helsinki)
+What happened: the new `head-does-not-build` rule ran `scripts/build_2129.sh` and found the PR's own `MessagePack.SourceGenerator.ExecutionTests` failing with **CS0535 ×6** in `GeneratedFormatterForExternalTypes.cs` (a file the PR adds). That read as "the agent shipped tests that don't compile". The same log holds **CS9057**: under the pinned SDK 8.0.402 the generator doesn't load, so the partial formatters it should fill are empty. Same root cause as L-04. With the SDK 9 override our verify scripts already use, both projects build (exit 0, no errors).
+What we learned: a receipt is only as good as its environment. A build failure is a fact about *the build*, not about the PR, until base builds in the same environment. We nearly put a false T3 reason on a signed page.
+What changed: `build_2129.sh` applies the L-04 override; the rule stays (it fires on a real break). Next step, not done: the build check should also build base and only blame the PR for errors base doesn't have.
+Evidence: `grep CS9057 out/2129/build/*.log` (1 before, 0 after); `out/2129/build/summary.tsv` (exit 0 / 0); `git diff --name-status 32258fdb origin/ju26-issue-2129 -- tests/MessagePack.SourceGenerator.ExecutionTests/GeneratedFormatterForExternalTypes.cs` → `A`.
 
 ### L-28 — The risk router's first verdict: our own main demo PR needs a full read (Sun 15 Nov ~00:15 Helsinki)
 What happened: we expected the router to put #2234 in T2 (predict-then-reveal) and only #2129 in T3. It put **#2234 and #2283 in T3** too: both change `TypeCollector.cs`, whose trust the ledger withdrew after the `1a74a620` escape. Without that rule both would be T2. The full read is small, though: 1 file, 22 changed lines on #2234 (29 on #2283); the other 3 files are T1 skims.

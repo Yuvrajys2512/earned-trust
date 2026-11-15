@@ -211,11 +211,47 @@ def compute_tier(key: str, repo: str, record: dict | None = None) -> dict:
         if record:
             record = {k: v for k, v in record.items() if k not in ("tier", "evidence_sha256")}
     head = gf.git(repo, "rev-parse", "--short=8", gf.resolve_branch(repo, pr.branch)).strip()
+    from .router_check import load_build
     res = tr.build(key, repo, pr.base, head, facts, record=record, budget=load(d / "budget.json"),
-                   ledger=load(d / "ledger.json"), calibration=load(d / "calibration.json"), trust=load(ROOT / "out" / "trust.json"))
+                   ledger=load(d / "ledger.json"), calibration=load(d / "calibration.json"), trust=load(ROOT / "out" / "trust.json"),
+                   build=load_build(d))
     res["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     (d / "tier.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
     return res
+
+
+def cmd_router_check(args: argparse.Namespace) -> int:
+    """Fail-closed self-test on the 4 PRs + synthetic controls with known answers -> out/router_check.json."""
+    from . import router_check as rc
+    load = lambda p: json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+    trust = load(ROOT / "out" / "trust.json")
+    st = []
+    for key, pr in PRS.items():
+        d = ROOT / "out" / key
+        record = load(d / "record.json")
+        if record:
+            record = {k: v for k, v in record.items() if k not in ("tier", "evidence_sha256")}
+        head = gf.git(args.repo, "rev-parse", "--short=8", gf.resolve_branch(args.repo, pr.branch)).strip()
+        inputs = {"facts": load(d / "facts.json"), "record": record, "budget": load(d / "budget.json"), "ledger": load(d / "ledger.json"),
+                  "calibration": load(d / "calibration.json"), "trust": trust, "build": rc.load_build(d)}
+        st.append(rc.selftest(key, args.repo, pr.base, head, inputs))
+    ctrl = rc.controls(args.repo, "32258fdb", ROOT / "out" / "controls", trust)
+    n = sum(len(x["cases"]) for x in st)
+    bad = sum(not c["ok"] for x in st for c in x["cases"])
+    res = {"generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+           "selftest": {"prs": st, "cases": n, "lowered": bad,
+                        "rule": "remove one input at a time; the tier may rise, never fall (fail closed)"},
+           "controls": ctrl}
+    (ROOT / "out" / "router_check.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
+    print(f"== router self-test: {n} cases (one input removed each), {bad} lowered the tier")
+    for x in st:
+        print(f"   #{x['pr']} {x['tier']}: " + ", ".join(f"-{c['removed']}->{c['tier']}{'' if c['ok'] else ' FAIL'}" for c in x["cases"]))
+    print(f"== controls: clean {ctrl['clean']['n']} (false alarms {ctrl['clean']['false_alarms']}), "
+          f"risky {ctrl['risky']['n']} (caught {ctrl['risky']['caught']}, missed {ctrl['risky']['missed']})")
+    for r in ctrl["rows"]:
+        print(f"   {r['id']} {r['kind']:<5} expect {r['expected']} got {r['tier']} {'PASS' if r['pass'] else 'FAIL'}  {r['change']}  [{', '.join(r['fired'])}]")
+    print("   -> out/router_check.json")
+    return 0 if bad == 0 and ctrl["risky"]["missed"] == 0 else 1
 
 
 def cmd_tier(args: argparse.Namespace) -> int:
@@ -711,6 +747,8 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("tier", help="explainable risk router: tier T0-T3 from named rules over executed facts -> out/<pr>/tier.json")
     p.add_argument("pr", choices=[*PRS, "all"])
     p.set_defaults(func=cmd_tier)
+    p = sub.add_parser("router-check", help="fail-closed self-test of the risk router + synthetic controls -> out/router_check.json")
+    p.set_defaults(func=cmd_router_check)
     p = sub.add_parser("budget", help="attention budget: which files a machine clears, which a human reads")
     p.add_argument("pr", choices=list(PRS))
     p.set_defaults(func=cmd_budget)
