@@ -44,7 +44,7 @@ The AI proves what behavior changed. The human predicts what should happen befor
 
 **Honest limits.** It's weak on architecture fit and maintainability. It needs a buildable, testable repo. Planted bugs only measure known bug types. Predict-before-reveal adds friction on purpose. Unproven behavior is shown as *unknown*, never *safe*. The demo signing key is not a personal identity.
 
-**Deliverables.** Concept card (`/card.html`, `docs/03_CONCEPT.md`), live walkthrough (`docs/10_WALKTHROUGH.md`), lessons log (`docs/LESSONS_LOG.md`, L-01…L-28), failure modes (`docs/FAILURE_MODES.md`, F-01…F-47), decision log (`docs/DECISIONS.md`), video.
+**Deliverables.** Concept card (`/card.html`, `docs/03_CONCEPT.md`), live walkthrough (`docs/10_WALKTHROUGH.md`), lessons log (`docs/LESSONS_LOG.md`, L-01…L-30), failure modes (`docs/FAILURE_MODES.md`, F-01…F-47), decision log (`docs/DECISIONS.md`), video.
 
 **Verify it yourself.**
 ```bash
