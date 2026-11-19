@@ -1,6 +1,6 @@
 # Receipts, not reviews — Earned Trust in AI Code (Junction 2026)
 
-**Live demo:** https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run · **Repo:** https://github.com/Yuvrajys2512/earned-trust · **Video (≤3 min):** DRIVE_FOLDER_LINK
+**Live demo:** https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run · **Repo:** https://github.com/Yuvrajys2512/earned-trust
 (scoreboard → review pages for #2234, #2297, #2283 · attention budget for #2129 · [concept card](https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run/card.html) · signed attestations)
 
 **Try to fool it:** https://yuvrajys2512--earned-trust-receipts-site.us-east.modal.run/fool.html: play the coding agent, hide instructions in a PR description, and see what the human sees vs what a model reads. Hidden text like this made a naive AI reviewer return no findings in 2 of 3 runs; our pipeline never gives PR text to a model.
